@@ -52,12 +52,8 @@ export default function LoginPage() {
         localStorage.removeItem('rememberedEmail');
       }
 
-      // Redirect based on onboarding status
-      if (data.user.onboarded) {
-        router.push('/dashboard');
-      } else {
-        router.push('/onboarding');
-      }
+      // Redirect to dashboard
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {

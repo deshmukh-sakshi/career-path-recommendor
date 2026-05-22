@@ -37,8 +37,8 @@ export default function SignupPage() {
       // Store user data in localStorage
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      // Success! Redirect to onboarding
-      router.push('/onboarding');
+      // Success! Redirect to dashboard
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
