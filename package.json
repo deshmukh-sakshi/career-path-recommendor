@@ -1,0 +1,53 @@
+{
+  "name": "kiro",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "@neondatabase/serverless": "^0.10.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@vercel/blob": "^0.24.0",
+    "bcryptjs": "^3.0.3",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "date-fns": "^4.1.0",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.36.0",
+    "framer-motion": "^11.11.0",
+    "lucide-react": "^0.460.0",
+    "mammoth": "^1.8.0",
+    "next": "^14.2.0",
+    "next-auth": "^4.24.0",
+    "pdf-parse": "^1.1.1",
+    "pdfjs-dist": "^5.7.284",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-dropzone": "^14.2.0",
+    "react-hook-form": "^7.53.0",
+    "recharts": "^2.15.4",
+    "tailwind-merge": "^2.5.0",
+    "zod": "^3.23.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pdf-parse": "^1.1.4",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.20",
+    "drizzle-kit": "^0.28.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.0",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.6.0"
+  }
+}

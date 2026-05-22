@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Backgrounds */
+  --bg-base: #0a0e17;
+  --bg-surface: #0f1623;
+  --bg-elevated: #161e2e;
+  --bg-muted: #1c2535;
+
+  /* Brand — Electric teal */
+  --brand: #00d4aa;
+  --brand-dim: #00a884;
+  --brand-glow: rgba(0, 212, 170, 0.15);
+  --brand-subtle: rgba(0, 212, 170, 0.08);
+
+  /* Text */
+  --text-primary: #f0f4f8;
+  --text-secondary: #8a99b0;
+  --text-muted: #4a5568;
+
+  /* Semantic */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+
+  /* Borders */
+  --border: rgba(255, 255, 255, 0.07);
+  --border-hover: rgba(0, 212, 170, 0.3);
+
+  /* Match score colors */
+  --match-high: #00d4aa;
+  --match-mid: #f59e0b;
+  --match-low: #ef4444;
+
+  /* Fonts */
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  color: var(--text-primary);
+  background: var(--bg-base);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer components {
+  .card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    backdrop-filter: blur(12px);
+  }
+
+  .btn-primary {
+    background: var(--brand);
+    color: var(--bg-base);
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+  }
+
+  .btn-primary:hover {
+    background: var(--brand-dim);
+    box-shadow: 0 0 20px var(--brand-glow);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--brand);
+    color: var(--brand);
+  }
+
+  .input-dark {
+    background: var(--bg-muted);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+  }
+
+  .input-dark:focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-glow);
+  }
+}
