@@ -24,7 +24,7 @@ export default function CTASection() {
           Free to start. No credit card required.
         </p>
         <Link href="/signup" className="btn-primary text-lg px-10 py-5 inline-flex items-center gap-2">
-          Start with Kiro
+          Start with CareerAI
           <span>→</span>
         </Link>
       </motion.div>

@@ -16,8 +16,11 @@ export default function HeroSection() {
 
       {/* Header */}
       <header className="absolute top-0 left-0 right-0 z-20 px-6 py-6 flex items-center justify-between max-w-7xl mx-auto">
-        <div className="text-2xl font-display text-brand">Kiro</div>
+        <div className="text-2xl font-display text-brand">CareerAI</div>
         <div className="flex items-center gap-4">
+          <Link href="/upload" className="btn-ghost text-sm">
+            Try Demo
+          </Link>
           <Link href="/login" className="btn-ghost text-sm">
             Sign in
           </Link>

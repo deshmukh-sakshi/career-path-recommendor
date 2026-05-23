@@ -25,7 +25,7 @@ export default function Sidebar({ user }: SidebarProps) {
       {/* Logo */}
       <div className="p-6 border-b border-border">
         <Link href="/" className="text-2xl font-display text-brand">
-          Kiro
+          CareerAI
         </Link>
       </div>
 

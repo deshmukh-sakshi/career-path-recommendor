@@ -1,437 +1,311 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState } from 'react';
 import AppShell from '@/components/layout/AppShell';
-
-interface ParsedResult {
-  confidence: number;
-  skills: {
-    technical: string[];
-    soft: string[];
-    tools: string[];
-  };
-  experience: {
-    education: string;
-    totalExp: string;
-    seniority: string;
-    lastRole: string;
-    certifications: string[];
-  };
-  insights: string[];
-}
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Upload, FileText, Trash2, RefreshCw } from 'lucide-react';
 
 export default function ResumePage() {
-  const [file, setFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isParsing, setIsParsing] = useState(false);
-  const [parseStage, setParseStage] = useState('');
-  const [parsedResult, setParsedResult] = useState<ParsedResult | null>(null);
-  const [linkedinUrl, setLinkedinUrl] = useState('');
-  const [textContent, setTextContent] = useState('');
-  const [error, setError] = useState('');
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeText, setResumeText] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [parsing, setParsing] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [hasExistingResume, setHasExistingResume] = useState(false);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      handleFileSelect(droppedFile);
-    }
-  };
-
-  const handleFileSelect = (selectedFile: File) => {
-    const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-    if (!validTypes.includes(selectedFile.type)) {
-      setError('Please upload a PDF, DOCX, or TXT file');
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (!userData) {
+      router.push('/login');
       return;
     }
-    if (selectedFile.size > 10 * 1024 * 1024) {
-      setError('File size must be less than 10MB');
-      return;
+    setUser(JSON.parse(userData));
+
+    // Check if resume exists
+    const resumeUploaded = localStorage.getItem('resumeUploaded');
+    setHasExistingResume(resumeUploaded === 'true');
+  }, [router]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setResumeFile(e.target.files[0]);
+      setUploadError('');
     }
-    setFile(selectedFile);
-    setError('');
   };
 
-  const handleAnalyze = async () => {
-    if (!file && !textContent) {
-      setError('Please upload a file or paste content');
+  const handleDeleteResume = () => {
+    if (confirm('Are you sure you want to delete your resume and analysis? This cannot be undone.')) {
+      localStorage.removeItem('careerAnalysis');
+      localStorage.removeItem('resumeUploaded');
+      setHasExistingResume(false);
+      setResumeFile(null);
+      setResumeText('');
+    }
+  };
+
+  const handleUploadAndParse = async () => {
+    if (!resumeFile && !resumeText) {
+      setUploadError('Please select a file or paste your resume text');
       return;
     }
 
-    setIsUploading(true);
-    setError('');
+    setUploading(true);
+    setUploadError('');
 
     try {
-      let extractedText = '';
+      let extractedText = resumeText;
 
-      if (file) {
-        // Upload file to extract text
+      // If file is selected, upload it first
+      if (resumeFile) {
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', resumeFile);
 
-        const uploadRes = await fetch('/api/resume/upload', {
+        const uploadResponse = await fetch('/api/parse-pdf', {
           method: 'POST',
           body: formData,
         });
 
-        if (!uploadRes.ok) {
-          const errorData = await uploadRes.json();
-          throw new Error(errorData.error || 'Failed to upload file');
+        if (!uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
+          throw new Error(uploadData.error || 'Failed to upload file');
         }
 
-        const uploadData = await uploadRes.json();
+        const uploadData = await uploadResponse.json();
         extractedText = uploadData.text;
-      } else {
-        extractedText = textContent;
+        console.log('📄 PDF parsed, text length:', extractedText.length);
       }
 
-      setIsUploading(false);
-      setIsParsing(true);
+      setUploading(false);
+      setParsing(true);
 
-      // Parse with Gemini
-      const stages = ['Reading', 'Extracting skills', 'Analyzing experience', 'Building profile'];
-      for (let i = 0; i < stages.length; i++) {
-        setParseStage(stages[i]);
-        await new Promise((resolve) => setTimeout(resolve, 800));
-      }
-
-      const parseRes = await fetch('/api/resume/parse', {
+      // Extract skills using Gemini AI
+      const skillsResponse = await fetch('/api/ai/extract-skills', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resumeText: extractedText }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: extractedText }),
       });
 
-      if (!parseRes.ok) {
-        const errorData = await parseRes.json();
-        throw new Error(errorData.error || 'Failed to parse resume');
+      if (!skillsResponse.ok) {
+        throw new Error('Failed to extract skills');
       }
 
-      const parseData = await parseRes.json();
+      const { skills } = await skillsResponse.json();
+      console.log('✨ Skills extracted:', skills);
 
-      // Transform API response to match our interface
-      setParsedResult({
-        confidence: 94,
-        skills: {
-          technical: parseData.skills?.slice(0, 8) || [],
-          soft: ['Communication', 'Problem Solving', 'Leadership'],
-          tools: parseData.skills?.slice(8, 12) || [],
+      setParsing(false);
+      setAnalyzing(true);
+
+      // Analyze career paths and skill gaps
+      const analysisResponse = await fetch('/api/ai/analyze-career', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        experience: {
-          education: parseData.education || 'Not specified',
-          totalExp: parseData.experience || 'Not specified',
-          seniority: parseData.seniority || 'Mid-level',
-          lastRole: parseData.lastRole || 'Not specified',
-          certifications: parseData.certifications || [],
-        },
-        insights: parseData.insights || [
-          'Strong technical background with modern frameworks',
-          'Consider adding cloud certifications to boost profile',
-          'Experience aligns well with AI/ML Engineer role',
-        ],
+        body: JSON.stringify({ skills }),
       });
 
-      setIsParsing(false);
+      if (!analysisResponse.ok) {
+        throw new Error('Failed to analyze career');
+      }
+
+      const analysisData = await analysisResponse.json();
+      console.log('🎯 Career analysis complete:', analysisData);
+
+      // Save to localStorage
+      localStorage.setItem('careerAnalysis', JSON.stringify(analysisData));
+      localStorage.setItem('resumeUploaded', 'true');
+      
+      setHasExistingResume(true);
+      
+      // Redirect to dashboard
+      router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message);
-      setIsUploading(false);
-      setIsParsing(false);
+      console.error('Error:', err);
+      setUploadError(err.message || 'Failed to process resume. Please try again.');
+    } finally {
+      setUploading(false);
+      setParsing(false);
+      setAnalyzing(false);
     }
   };
 
-  const handleSaveToProfile = () => {
-    alert('Resume saved to profile successfully!');
-  };
-
-  const handleDownloadJSON = () => {
-    const dataStr = JSON.stringify(parsedResult, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'parsed-resume.json';
-    link.click();
-  };
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-bg-base flex items-center justify-center">
+        <div className="text-text-secondary">Loading...</div>
+      </div>
+    );
+  }
 
   return (
-    <AppShell title="My Resume" subtitle="Upload and analyze your resume with AI">
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Left Column: Upload Section */}
-        <div className="space-y-6">
+    <AppShell
+      title="My Resume"
+      subtitle="Upload or update your resume for personalized career insights"
+    >
+      <div className="max-w-3xl mx-auto">
+        {/* Existing Resume Status */}
+        {hasExistingResume && (
           <motion.div
-            initial={{ opacity: 0, x: -16 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="card p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="card p-6 mb-6 bg-success/5 border-success/20"
           >
-            <h2 className="text-2xl font-display mb-6">Upload Resume</h2>
-
-            {/* Dropzone */}
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-12 text-center transition-all cursor-pointer ${
-                isDragging
-                  ? 'border-brand bg-brand/10'
-                  : 'border-border hover:border-brand/50 hover:bg-brand/5'
-              }`}
-              onClick={() => document.getElementById('fileInput')?.click()}
-            >
-              <input
-                id="fileInput"
-                type="file"
-                accept=".pdf,.docx,.txt"
-                onChange={(e) => e.target.files && handleFileSelect(e.target.files[0])}
-                className="hidden"
-              />
-              <div className="text-6xl mb-4">📄</div>
-              {file ? (
-                <div>
-                  <div className="text-lg font-semibold text-brand mb-2">{file.name}</div>
-                  <div className="text-sm text-text-secondary">
-                    {(file.size / 1024).toFixed(1)} KB
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div className="text-lg font-semibold mb-2">
-                    Drop your resume here or click to browse
-                  </div>
-                  <div className="text-sm text-text-secondary">
-                    Supports PDF, DOCX, TXT (max 10MB)
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {isUploading && (
-              <div className="mt-4">
-                <div className="h-2 bg-bg-muted rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: '0%' }}
-                    animate={{ width: '100%' }}
-                    transition={{ duration: 1.5 }}
-                    className="h-full bg-brand"
-                  />
-                </div>
-                <div className="text-sm text-text-secondary mt-2 text-center">Uploading...</div>
-              </div>
-            )}
-
-            {isParsing && (
-              <div className="mt-4 p-4 bg-brand/10 border border-brand/30 rounded-lg">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
-                  <span className="font-semibold text-brand">Parsing with Gemini AI...</span>
-                </div>
-                <div className="text-sm text-text-secondary">{parseStage}</div>
-              </div>
-            )}
-
-            {error && (
-              <div className="mt-4 p-4 bg-danger/10 border border-danger/30 rounded-lg text-danger">
-                {error}
-              </div>
-            )}
-
-            {/* Divider */}
-            <div className="flex items-center gap-4 my-6">
-              <div className="flex-1 h-px bg-border" />
-              <span className="text-sm text-text-secondary">or paste content</span>
-              <div className="flex-1 h-px bg-border" />
-            </div>
-
-            {/* LinkedIn URL */}
-            <div className="mb-4">
-              <label className="block text-sm text-text-secondary mb-2">LinkedIn Profile URL</label>
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  placeholder="https://linkedin.com/in/yourprofile"
-                  value={linkedinUrl}
-                  onChange={(e) => setLinkedinUrl(e.target.value)}
-                  className="input-dark flex-1"
-                />
-                <button className="btn-ghost">Import</button>
-              </div>
-            </div>
-
-            {/* Text Area */}
-            <div>
-              <label className="block text-sm text-text-secondary mb-2">
-                Or paste resume text
-              </label>
-              <textarea
-                placeholder="Paste your resume content here..."
-                value={textContent}
-                onChange={(e) => setTextContent(e.target.value)}
-                rows={8}
-                className="input-dark w-full resize-none"
-              />
-            </div>
-
-            {/* Analyze Button */}
-            <button
-              onClick={handleAnalyze}
-              disabled={isUploading || isParsing}
-              className="btn-primary w-full mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isUploading || isParsing ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-bg-base border-t-transparent rounded-full animate-spin" />
-                  Processing...
-                </span>
-              ) : (
-                '🤖 Analyze with Gemini →'
-              )}
-            </button>
-          </motion.div>
-        </div>
-
-        {/* Right Column: Results */}
-        {parsedResult && (
-          <motion.div
-            initial={{ opacity: 0, x: 16 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-6"
-          >
-            {/* Confidence Banner */}
-            <div className="card p-6 bg-success/10 border-success/30">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="text-3xl">✓</div>
+                <div className="w-12 h-12 bg-success/20 rounded-lg flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-success" />
+                </div>
                 <div>
-                  <div className="font-semibold text-success text-lg">
-                    Parsed with {parsedResult.confidence}% confidence
-                  </div>
-                  <div className="text-sm text-text-secondary">
-                    {parsedResult.skills.technical.length + parsedResult.skills.soft.length + parsedResult.skills.tools.length} skills extracted
-                  </div>
+                  <h3 className="font-semibold">Resume Uploaded</h3>
+                  <p className="text-sm text-text-secondary">
+                    Your career analysis is ready on the dashboard
+                  </p>
                 </div>
               </div>
-            </div>
-
-            {/* Skills Tabs */}
-            <div className="card p-6">
-              <h3 className="text-xl font-semibold mb-4">Extracted Skills</h3>
-              <div className="space-y-4">
-                <div>
-                  <div className="text-sm text-text-secondary mb-2">Technical Skills</div>
-                  <div className="flex flex-wrap gap-2">
-                    {parsedResult.skills.technical.map((skill, i) => (
-                      <span
-                        key={i}
-                        className="px-3 py-1 bg-brand/20 text-brand rounded-lg text-sm border border-brand/30"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-secondary mb-2">Soft Skills</div>
-                  <div className="flex flex-wrap gap-2">
-                    {parsedResult.skills.soft.map((skill, i) => (
-                      <span
-                        key={i}
-                        className="px-3 py-1 bg-bg-muted text-text-primary rounded-lg text-sm border border-border"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-text-secondary mb-2">Tools & Platforms</div>
-                  <div className="flex flex-wrap gap-2">
-                    {parsedResult.skills.tools.map((skill, i) => (
-                      <span
-                        key={i}
-                        className="px-3 py-1 bg-bg-muted text-text-primary rounded-lg text-sm border border-border"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Experience Summary */}
-            <div className="card p-6">
-              <h3 className="text-xl font-semibold mb-4">Experience Summary</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Education</span>
-                  <span className="font-medium">{parsedResult.experience.education}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Total Experience</span>
-                  <span className="font-medium">{parsedResult.experience.totalExp}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Seniority Level</span>
-                  <span className="font-medium">{parsedResult.experience.seniority}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Last Role</span>
-                  <span className="font-medium">{parsedResult.experience.lastRole}</span>
-                </div>
-                {parsedResult.experience.certifications.length > 0 && (
-                  <div>
-                    <span className="text-text-secondary block mb-2">Certifications</span>
-                    <div className="flex flex-wrap gap-2">
-                      {parsedResult.experience.certifications.map((cert, i) => (
-                        <span
-                          key={i}
-                          className="px-2 py-1 bg-brand/10 text-brand rounded text-sm"
-                        >
-                          {cert}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Gemini Insights */}
-            <div className="card p-6 bg-brand/5 border-brand/30">
-              <h3 className="text-xl font-semibold mb-4 text-brand">🤖 Gemini Insights</h3>
-              <ul className="space-y-2">
-                {parsedResult.insights.map((insight, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm">
-                    <span className="text-brand mt-1">•</span>
-                    <span className="text-text-secondary">{insight}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <button onClick={handleSaveToProfile} className="btn-primary flex-1">
-                ✓ Save to profile
-              </button>
-              <button onClick={() => setParsedResult(null)} className="btn-ghost">
-                🔄 Re-parse
-              </button>
-              <button onClick={handleDownloadJSON} className="btn-ghost">
-                📥 Download JSON
+              <button
+                onClick={handleDeleteResume}
+                className="btn-ghost text-danger hover:bg-danger/10 flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
               </button>
             </div>
           </motion.div>
         )}
+
+        {/* Upload Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="card p-8"
+        >
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-brand/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              {hasExistingResume ? (
+                <RefreshCw className="w-8 h-8 text-brand" />
+              ) : (
+                <Upload className="w-8 h-8 text-brand" />
+              )}
+            </div>
+            <h2 className="text-2xl font-display mb-2">
+              {hasExistingResume ? 'Upload New Resume' : 'Upload Your Resume'}
+            </h2>
+            <p className="text-text-secondary">
+              {hasExistingResume
+                ? 'Replace your current resume with a new one'
+                : 'Get AI-powered career recommendations and skill gap analysis'}
+            </p>
+          </div>
+
+          {uploadError && (
+            <div className="mb-6 p-4 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm">
+              {uploadError}
+            </div>
+          )}
+
+          {(uploading || parsing || analyzing) && (
+            <div className="mb-6 p-8 text-center bg-brand/5 rounded-lg border border-brand/20">
+              <div className="text-4xl mb-4 animate-pulse">🤖</div>
+              <div className="text-lg font-semibold mb-2">
+                {uploading && 'Uploading your resume...'}
+                {parsing && 'Extracting skills with Gemini AI...'}
+                {analyzing && 'Analyzing career paths and skill gaps...'}
+              </div>
+              <div className="text-sm text-text-secondary">
+                {analyzing ? 'This may take 10-15 seconds' : 'Please wait...'}
+              </div>
+            </div>
+          )}
+
+          {!uploading && !parsing && !analyzing && (
+            <>
+              {/* File Upload */}
+              <div className="mb-6">
+                <div className="card p-8 border-2 border-dashed border-border hover:border-brand/50 transition-all text-center cursor-pointer bg-bg-elevated">
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,.txt"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="resume-upload"
+                  />
+                  <label htmlFor="resume-upload" className="cursor-pointer">
+                    <div className="text-5xl mb-4">📄</div>
+                    <div className="text-lg mb-2">
+                      {resumeFile ? resumeFile.name : 'Drag & drop your resume here'}
+                    </div>
+                    <div className="text-sm text-text-secondary mb-4">
+                      PDF, DOCX, or TXT · Max 10 MB
+                    </div>
+                    <button type="button" className="btn-ghost">
+                      Browse files
+                    </button>
+                  </label>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="relative mb-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-bg-surface text-text-secondary">or paste text</span>
+                </div>
+              </div>
+
+              {/* Text Input */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-2">
+                  Paste your resume text
+                </label>
+                <textarea
+                  value={resumeText}
+                  onChange={(e) => setResumeText(e.target.value)}
+                  placeholder="Paste your full resume here..."
+                  className="input-dark w-full h-32 resize-none"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
+                onClick={handleUploadAndParse}
+                disabled={!resumeFile && !resumeText}
+                className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                🤖 {hasExistingResume ? 'Update Resume & Re-analyze' : 'Analyze Resume & Get Career Insights'} →
+              </button>
+            </>
+          )}
+        </motion.div>
+
+        {/* Info Cards */}
+        <div className="grid md:grid-cols-3 gap-4 mt-6">
+          {[
+            { icon: '⚡', title: 'Fast Analysis', desc: 'Complete analysis in under 20 seconds' },
+            { icon: '🎯', title: 'AI-Powered', desc: 'Gemini AI provides personalized insights' },
+            { icon: '🔒', title: 'Secure', desc: 'Your data is encrypted and private' },
+          ].map((feature, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 + i * 0.1 }}
+              className="card p-4 text-center"
+            >
+              <div className="text-3xl mb-2">{feature.icon}</div>
+              <div className="font-semibold text-sm mb-1">{feature.title}</div>
+              <div className="text-xs text-text-secondary">{feature.desc}</div>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </AppShell>
   );

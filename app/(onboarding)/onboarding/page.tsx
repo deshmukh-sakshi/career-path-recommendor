@@ -235,7 +235,7 @@ export default function OnboardingPage() {
             transition={{ duration: 2, repeat: Infinity }}
             className="text-6xl font-display text-brand mb-8"
           >
-            Kiro
+            CareerAI
           </motion.div>
           
           <div className="space-y-4">
@@ -268,7 +268,7 @@ export default function OnboardingPage() {
         <div className="max-w-3xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between mb-4">
             <Link href="/" className="text-xl font-display text-brand">
-              Kiro
+              CareerAI
             </Link>
             <span className="text-sm text-text-secondary">
               Step {step} of 4

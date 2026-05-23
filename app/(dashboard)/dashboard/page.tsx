@@ -6,47 +6,7 @@ import ProfileScore from '@/components/dashboard/ProfileScore';
 import CareerCard from '@/components/dashboard/CareerCard';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-// Mock data - will be replaced with real API calls
-const mockCareerMatches = [
-  {
-    id: '1',
-    title: 'AI/ML Engineer',
-    salary: '$145K avg',
-    demand: 'High demand',
-    timeline: '2–3 yr path',
-    matchScore: 92,
-    skills: {
-      have: ['Python', 'TensorFlow'],
-      need: ['MLOps', 'LLM fine-tuning'],
-    },
-    isBestFit: true,
-  },
-  {
-    id: '2',
-    title: 'Data Scientist',
-    salary: '$125K avg',
-    demand: 'Very high demand',
-    timeline: '1–2 yr',
-    matchScore: 85,
-    skills: {
-      have: ['SQL', 'Statistics'],
-      need: ['Spark'],
-    },
-  },
-  {
-    id: '3',
-    title: 'Cloud Architect',
-    salary: '$155K avg',
-    demand: 'Growing fast',
-    timeline: '3–4 yr path',
-    matchScore: 71,
-    skills: {
-      have: ['AWS', 'Docker'],
-      need: ['Kubernetes', 'Terraform'],
-    },
-  },
-];
+import { BookOpen, TrendingUp, Target, ExternalLink } from 'lucide-react';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -56,7 +16,12 @@ export default function DashboardPage() {
   const [resumeText, setResumeText] = useState('');
   const [uploading, setUploading] = useState(false);
   const [parsing, setParsing] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  
+  // Analysis results
+  const [careerData, setCareerData] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'recommendations' | 'skillGaps'>('recommendations');
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -67,16 +32,17 @@ export default function DashboardPage() {
     const parsedUser = JSON.parse(userData);
     setUser(parsedUser);
     
-    // Check if user has uploaded a resume (you can add API call here)
-    // For now, we'll check localStorage or assume false for new users
-    const resumeUploaded = localStorage.getItem('resumeUploaded');
-    setHasResume(resumeUploaded === 'true');
+    // Check if analysis data exists
+    const savedAnalysis = localStorage.getItem('careerAnalysis');
+    if (savedAnalysis) {
+      setCareerData(JSON.parse(savedAnalysis));
+      setHasResume(true);
+    }
   }, [router]);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setResumeFile(file);
+      setResumeFile(e.target.files[0]);
       setUploadError('');
     }
   };
@@ -98,7 +64,7 @@ export default function DashboardPage() {
         const formData = new FormData();
         formData.append('file', resumeFile);
 
-        const uploadResponse = await fetch('/api/resume/upload', {
+        const uploadResponse = await fetch('/api/parse-pdf', {
           method: 'POST',
           body: formData,
         });
@@ -110,40 +76,60 @@ export default function DashboardPage() {
 
         const uploadData = await uploadResponse.json();
         extractedText = uploadData.text;
+        console.log('📄 PDF parsed, text length:', extractedText.length);
       }
 
-      // Parse the resume
+      setUploading(false);
       setParsing(true);
-      const parseResponse = await fetch('/api/resume/parse', {
+
+      // Extract skills using Gemini AI
+      const skillsResponse = await fetch('/api/ai/extract-skills', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          text: extractedText,
-          userId: user.id,
-        }),
+        body: JSON.stringify({ text: extractedText }),
       });
 
-      if (!parseResponse.ok) {
-        const parseData = await parseResponse.json();
-        throw new Error(parseData.error || 'Failed to parse resume');
+      if (!skillsResponse.ok) {
+        throw new Error('Failed to extract skills');
       }
 
-      const parseData = await parseResponse.json();
-      
-      // Mark resume as uploaded
+      const { skills } = await skillsResponse.json();
+      console.log('✨ Skills extracted:', skills);
+
+      setParsing(false);
+      setAnalyzing(true);
+
+      // Analyze career paths and skill gaps
+      const analysisResponse = await fetch('/api/ai/analyze-career', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ skills }),
+      });
+
+      if (!analysisResponse.ok) {
+        throw new Error('Failed to analyze career');
+      }
+
+      const analysisData = await analysisResponse.json();
+      console.log('🎯 Career analysis complete:', analysisData);
+
+      // Save to localStorage
+      localStorage.setItem('careerAnalysis', JSON.stringify(analysisData));
       localStorage.setItem('resumeUploaded', 'true');
-      setHasResume(true);
       
-      // Refresh the page to show career matches
-      window.location.reload();
+      setCareerData(analysisData);
+      setHasResume(true);
     } catch (err: any) {
-      console.error('Upload/parse error:', err);
+      console.error('Error:', err);
       setUploadError(err.message || 'Failed to process resume. Please try again.');
     } finally {
       setUploading(false);
       setParsing(false);
+      setAnalyzing(false);
     }
   };
 
@@ -174,7 +160,7 @@ export default function DashboardPage() {
                 Upload your resume to get started
               </h2>
               <p className="text-text-secondary">
-                Our AI will analyze your skills and experience to find the best career matches for you
+                Our AI will analyze your skills and provide personalized career recommendations
               </p>
             </div>
 
@@ -184,22 +170,24 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {(uploading || parsing) && (
+            {(uploading || parsing || analyzing) && (
               <div className="mb-6 p-8 text-center bg-brand/5 rounded-lg border border-brand/20">
                 <div className="text-4xl mb-4 animate-pulse">🤖</div>
                 <div className="text-lg font-semibold mb-2">
-                  {uploading && !parsing ? 'Uploading your resume...' : 'Analyzing with Gemini AI...'}
+                  {uploading && 'Uploading your resume...'}
+                  {parsing && 'Extracting skills with Gemini AI...'}
+                  {analyzing && 'Analyzing career paths and skill gaps...'}
                 </div>
                 <div className="text-sm text-text-secondary">
-                  {parsing ? 'Extracting skills, experience, and achievements' : 'Please wait...'}
+                  {analyzing ? 'This may take 10-15 seconds' : 'Please wait...'}
                 </div>
               </div>
             )}
 
-            {!uploading && !parsing && (
+            {!uploading && !parsing && !analyzing && (
               <>
                 <div className="mb-6">
-                  <div className="card p-8 border-2 border-dashed border-border hover:border-brand/50 transition-all text-center cursor-pointer">
+                  <div className="card p-8 border-2 border-dashed border-border hover:border-brand/50 transition-all text-center cursor-pointer bg-bg-elevated">
                     <input
                       type="file"
                       accept=".pdf,.docx,.txt"
@@ -248,28 +236,16 @@ export default function DashboardPage() {
                   disabled={!resumeFile && !resumeText}
                   className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  🤖 Analyze Resume & Get Career Matches →
+                  🤖 Analyze Resume & Get Career Insights →
                 </button>
-
-                <div className="mt-6 text-center">
-                  <button
-                    onClick={() => {
-                      localStorage.setItem('resumeUploaded', 'true');
-                      setHasResume(true);
-                    }}
-                    className="text-sm text-text-muted hover:text-brand"
-                  >
-                    Skip for now — I'll add this later
-                  </button>
-                </div>
               </>
             )}
           </div>
 
           <div className="grid md:grid-cols-3 gap-4">
             {[
-              { icon: '⚡', title: 'Fast Analysis', desc: 'Resume parsed in under 10 seconds' },
-              { icon: '🎯', title: 'AI-Powered', desc: 'Gemini AI extracts skills & experience' },
+              { icon: '⚡', title: 'Fast Analysis', desc: 'Complete analysis in under 20 seconds' },
+              { icon: '🎯', title: 'AI-Powered', desc: 'Gemini AI provides personalized insights' },
               { icon: '🔒', title: 'Secure', desc: 'Your data is encrypted and private' },
             ].map((feature, i) => (
               <motion.div
@@ -290,168 +266,261 @@ export default function DashboardPage() {
     );
   }
 
+  // Show career analysis results
   return (
     <AppShell
       title={`Good morning, ${user?.name?.split(' ')[0] || 'there'} 👋`}
-      subtitle="3 new career matches since yesterday"
+      subtitle="Your personalized career insights"
     >
-      {/* Profile Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <ProfileScore score={user?.profileScore || 74} change={8} />
-
+      {/* Overall Analysis Card */}
+      {careerData?.overallAnalysis && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="card p-6"
+          className="card p-6 mb-8"
         >
-          <div className="text-text-secondary text-sm mb-2">Skills Mapped</div>
-          <div className="text-4xl font-display text-text-primary mb-1">23</div>
-          <div className="text-xs text-text-muted mb-3">5 gaps identified</div>
-          <div className="h-1.5 bg-bg-muted rounded-full overflow-hidden">
-            <div className="h-full bg-brand rounded-full" style={{ width: '82%' }} />
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Overall Analysis</h3>
+            <button
+              onClick={() => {
+                localStorage.removeItem('careerAnalysis');
+                localStorage.removeItem('resumeUploaded');
+                setHasResume(false);
+                setCareerData(null);
+              }}
+              className="btn-ghost text-sm"
+            >
+              📄 Upload New Resume
+            </button>
+          </div>
+          <div className="grid md:grid-cols-4 gap-6">
+            <div>
+              <div className="text-text-secondary text-sm mb-2">Career Readiness</div>
+              <div className="flex items-center gap-3">
+                <div className="text-4xl font-display text-brand">
+                  {careerData.overallAnalysis.careerReadiness}%
+                </div>
+                <div className="text-xs text-success">↑ Strong</div>
+              </div>
+            </div>
+            <div>
+              <div className="text-text-secondary text-sm mb-2">Market Demand</div>
+              <div className="text-2xl font-semibold text-success">
+                {careerData.overallAnalysis.marketDemand}
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <div className="text-text-secondary text-sm mb-2">Your Strengths</div>
+              <div className="flex flex-wrap gap-2">
+                {careerData.overallAnalysis.strengths.slice(0, 2).map((strength: string, i: number) => (
+                  <span key={i} className="text-xs px-3 py-1 bg-brand/10 text-brand rounded-full">
+                    {strength}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </motion.div>
+      )}
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="card p-6"
+      {/* Tabs */}
+      <div className="flex gap-4 mb-6">
+        <button
+          onClick={() => setActiveTab('recommendations')}
+          className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+            activeTab === 'recommendations'
+              ? 'bg-brand text-bg-base'
+              : 'bg-bg-surface text-text-secondary hover:bg-bg-elevated'
+          }`}
         >
-          <div className="text-text-secondary text-sm mb-2">Market Demand</div>
-          <div className="text-2xl font-semibold text-success mb-1">HIGH</div>
-          <div className="text-xs text-text-muted">AI/ML roles ↑ 29% YoY</div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="card p-6"
+          <TrendingUp className="w-5 h-5" />
+          Career Recommendations
+        </button>
+        <button
+          onClick={() => setActiveTab('skillGaps')}
+          className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+            activeTab === 'skillGaps'
+              ? 'bg-brand text-bg-base'
+              : 'bg-bg-surface text-text-secondary hover:bg-bg-elevated'
+          }`}
         >
-          <div className="text-text-secondary text-sm mb-2">Next Best Action</div>
-          <div className="text-sm font-medium mb-1">Complete LLM certification</div>
-          <div className="text-xs text-brand mb-3">+18% match score</div>
-          <button className="btn-primary text-xs px-3 py-1.5">Do it →</button>
-        </motion.div>
+          <Target className="w-5 h-5" />
+          Skill Gaps & Learning
+        </button>
       </div>
 
-      {/* Career Recommendations */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="mb-8"
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-display">Your career matches</h2>
-          <div className="flex gap-2">
-            {['All', 'Best fit', 'Fastest path', 'Highest salary', 'Saved'].map((filter) => (
-              <button
-                key={filter}
-                className={`px-4 py-2 rounded-lg text-sm transition-all ${
-                  filter === 'All'
-                    ? 'bg-brand text-bg-base'
-                    : 'bg-bg-surface text-text-secondary hover:bg-bg-elevated'
-                }`}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid gap-6 mb-6">
-          {mockCareerMatches.map((career, index) => (
-            <motion.div
-              key={career.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 + index * 0.1 }}
-            >
-              <CareerCard {...career} />
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="text-center">
-          <button className="text-brand hover:text-brand-dim transition-colors">
-            See all 12 matches →
-          </button>
-        </div>
-      </motion.div>
-
-      {/* Secondary Content */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Peer Insights */}
+      {/* Career Recommendations Tab */}
+      {activeTab === 'recommendations' && careerData?.careerRecommendations && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="card p-6"
+          className="space-y-6"
         >
-          <h3 className="text-lg font-semibold mb-4">How professionals like you moved</h3>
-          <p className="text-sm text-text-secondary mb-4">
-            Based on collaborative filtering
-          </p>
-
-          <div className="space-y-3">
-            {[
-              { role: 'ML Engineer', percentage: 68 },
-              { role: 'Data Scientist', percentage: 44 },
-              { role: 'Product Manager', percentage: 31 },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3">
+          {careerData.careerRecommendations.map((career: any, index: number) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="card p-6 hover:border-brand/30 transition-all"
+            >
+              <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm">→ {item.role}</span>
-                    <span className="text-sm text-brand font-semibold">{item.percentage}%</span>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-2xl font-display">{career.title}</h3>
+                    {index === 0 && (
+                      <span className="px-3 py-1 bg-brand text-bg-base text-xs font-semibold rounded-full">
+                        Best Fit
+                      </span>
+                    )}
                   </div>
-                  <div className="h-1.5 bg-bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-brand rounded-full"
-                      style={{ width: `${item.percentage}%` }}
-                    />
+                  <div className="flex items-center gap-4 text-sm text-text-secondary mb-3">
+                    <span>💰 {career.salaryRange}</span>
+                    <span>📈 {career.demandLevel} demand</span>
+                    <span>⏱ {career.timeline}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-3xl font-display text-brand mb-1">
+                    {career.matchScore}%
+                  </div>
+                  <div className="text-xs text-text-secondary">Match Score</div>
+                </div>
+              </div>
+
+              <p className="text-text-secondary mb-4">{career.description}</p>
+
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <div className="text-sm font-semibold mb-2">Key Responsibilities</div>
+                  <ul className="space-y-1">
+                    {career.keyResponsibilities.map((resp: string, i: number) => (
+                      <li key={i} className="text-sm text-text-secondary flex items-start gap-2">
+                        <span className="text-brand mt-1">•</span>
+                        <span>{resp}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold mb-2">Required Skills</div>
+                  <div className="flex flex-wrap gap-2">
+                    {career.requiredSkills.map((skill: string, i: number) => (
+                      <span
+                        key={i}
+                        className="px-3 py-1 bg-bg-elevated text-text-secondary text-xs rounded-full border border-border"
+                      >
+                        {skill}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-
-          <p className="text-xs text-text-muted mt-4">
-            Based on 847 profiles matching yours
-          </p>
+            </motion.div>
+          ))}
         </motion.div>
+      )}
 
-        {/* AI Assistant */}
+      {/* Skill Gaps Tab */}
+      {activeTab === 'skillGaps' && careerData?.skillGaps && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9 }}
-          className="card p-6"
+          className="space-y-6"
         >
-          <h3 className="text-lg font-semibold mb-4">AI Career Assistant</h3>
+          {careerData.skillGaps.map((category: any, catIndex: number) => (
+            <motion.div
+              key={catIndex}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: catIndex * 0.1 }}
+              className="card p-6"
+            >
+              <h3 className="text-xl font-display mb-4 flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-brand" />
+                {category.category}
+              </h3>
 
-          <div className="space-y-4 mb-4">
-            <div className="bg-bg-elevated p-4 rounded-lg">
-              <p className="text-sm text-text-secondary">
-                Based on your resume, your fastest path to ML Engineer is TensorFlow
-                certification. 87 similar profiles finished this in 4–6 months.
-              </p>
-            </div>
-          </div>
+              <div className="space-y-6">
+                {category.missingSkills.map((skill: any, skillIndex: number) => (
+                  <div key={skillIndex} className="border-l-2 border-brand/30 pl-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h4 className="font-semibold text-lg">{skill.name}</h4>
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full ${
+                            skill.importance === 'High'
+                              ? 'bg-danger/10 text-danger'
+                              : 'bg-warning/10 text-warning'
+                          }`}
+                        >
+                          {skill.importance} Priority
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-text-secondary mb-4">{skill.description}</p>
 
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Ask me anything about your career..."
-              className="input-dark flex-1 text-sm"
-            />
-            <button className="btn-primary px-4 py-2 text-sm">Send</button>
-          </div>
+                    <div className="bg-bg-elevated rounded-lg p-4">
+                      <div className="text-sm font-semibold mb-3">Learning Resources</div>
+                      <div className="space-y-3">
+                        {skill.learningResources.map((resource: any, resIndex: number) => (
+                          <div
+                            key={resIndex}
+                            className="flex items-start justify-between p-3 bg-bg-surface rounded-lg hover:bg-bg-muted transition-all"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-medium">{resource.title}</span>
+                                <span className="text-xs px-2 py-0.5 bg-brand/10 text-brand rounded">
+                                  {resource.type}
+                                </span>
+                              </div>
+                              <div className="text-xs text-text-secondary">
+                                ⏱ {resource.duration}
+                              </div>
+                            </div>
+                            <a
+                              href={resource.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn-ghost px-3 py-1 text-xs flex items-center gap-1"
+                            >
+                              View
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          ))}
+
+          {/* Next Steps */}
+          {careerData?.overallAnalysis?.nextSteps && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="card p-6 bg-brand/5 border-brand/20"
+            >
+              <h3 className="text-xl font-display mb-4">🎯 Your Next Steps</h3>
+              <div className="space-y-3">
+                {careerData.overallAnalysis.nextSteps.map((step: string, i: number) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-brand text-bg-base flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                      {i + 1}
+                    </div>
+                    <p className="text-text-secondary">{step}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </motion.div>
-      </div>
+      )}
     </AppShell>
   );
 }

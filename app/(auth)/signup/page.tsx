@@ -51,7 +51,7 @@ export default function SignupPage() {
       {/* Left Panel */}
       <div className="bg-bg-base p-12 flex flex-col justify-between">
         <Link href="/" className="text-2xl font-display text-brand">
-          Kiro
+          CareerAI
         </Link>
 
         <div>

@@ -62,33 +62,12 @@ export async function POST(request: NextRequest) {
 
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
-    // Try pdfjs-dist first
-    const pdfjs = await import('pdfjs-dist');
-    pdfjs.GlobalWorkerOptions.workerSrc = '';
-
-    const loadingTask = pdfjs.getDocument({
-      data: new Uint8Array(buffer),
-    });
-
-    const pdfDoc = await loadingTask.promise;
-    const textPages: string[] = [];
-
-    for (let i = 1; i <= pdfDoc.numPages; i++) {
-      const page = await pdfDoc.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => ('str' in item ? item.str : ''))
-        .join(' ');
-      textPages.push(pageText);
-    }
-
-    return textPages.join('\n');
-  } catch (pdfjsError) {
-    console.error('pdfjs-dist failed, trying pdf-parse fallback:', pdfjsError);
-    
-    // Fallback to pdf-parse
+    // Use pdf-parse directly (skip pdfjs-dist)
     const pdfParse = (await import('pdf-parse')).default;
     const data = await pdfParse(buffer);
     return data.text;
+  } catch (error) {
+    console.error('PDF parsing error:', error);
+    throw new Error('Failed to extract text from PDF');
   }
 }

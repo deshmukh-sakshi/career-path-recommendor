@@ -52,12 +52,6 @@ export default function TopBar({ user, title, subtitle }: TopBarProps) {
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-dim flex items-center justify-center text-bg-base font-semibold text-sm">
             {user?.name?.charAt(0) || 'U'}
           </div>
-          <button
-            onClick={handleSignOut}
-            className="text-sm text-text-secondary hover:text-text-primary"
-          >
-            Sign out
-          </button>
         </div>
       </div>
     </div>

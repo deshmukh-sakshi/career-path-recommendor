@@ -66,7 +66,7 @@ export default function LoginPage() {
       {/* Left Panel */}
       <div className="bg-bg-base p-12 flex flex-col justify-between">
         <Link href="/" className="text-2xl font-display text-brand">
-          Kiro
+          CareerAI
         </Link>
 
         <div>
@@ -108,7 +108,7 @@ export default function LoginPage() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md"
         >
-          <h2 className="text-2xl font-semibold mb-2">Sign in to Kiro</h2>
+          <h2 className="text-2xl font-semibold mb-2">Sign in to CareerAI</h2>
           <p className="text-text-secondary text-sm mb-8">
             Continue your career journey
           </p>
@@ -204,7 +204,7 @@ export default function LoginPage() {
           </div>
 
           <p className="text-center text-sm text-text-secondary">
-            New to Kiro?{' '}
+            New to CareerAI?{' '}
             <Link href="/signup" className="text-brand hover:text-brand-dim">
               Create a free account →
             </Link>
