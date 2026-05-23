@@ -92,6 +92,13 @@ export default function ResumePage() {
       });
 
       if (!skillsResponse.ok) {
+        const errorData = await skillsResponse.json();
+        
+        // Check if it's a document validation error
+        if (errorData.error === 'Invalid document type') {
+          throw new Error(errorData.message || 'Please upload a valid resume or CV');
+        }
+        
         throw new Error('Failed to extract skills');
       }
 
@@ -215,8 +222,8 @@ export default function ResumePage() {
               <div className="text-4xl mb-4 animate-pulse">🤖</div>
               <div className="text-lg font-semibold mb-2">
                 {uploading && 'Uploading your resume...'}
-                {parsing && 'Extracting skills with Gemini AI...'}
-                {analyzing && 'Analyzing career paths and skill gaps...'}
+                {parsing && 'Analyzing your resume...'}
+                {analyzing && 'Generating career recommendations...'}
               </div>
               <div className="text-sm text-text-secondary">
                 {analyzing ? 'This may take 10-15 seconds' : 'Please wait...'}
@@ -280,7 +287,7 @@ export default function ResumePage() {
                 disabled={!resumeFile && !resumeText}
                 className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                🤖 {hasExistingResume ? 'Update Resume & Re-analyze' : 'Analyze Resume & Get Career Insights'} →
+                {hasExistingResume ? 'Update Resume & Re-analyze' : 'Analyze Resume & Get Career Insights'} →
               </button>
             </>
           )}

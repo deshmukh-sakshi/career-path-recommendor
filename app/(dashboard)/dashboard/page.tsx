@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import AppShell from '@/components/layout/AppShell';
 import ProfileScore from '@/components/dashboard/ProfileScore';
 import CareerCard from '@/components/dashboard/CareerCard';
+import SkillLevelBadge from '@/components/dashboard/SkillLevelBadge';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BookOpen, TrendingUp, Target, ExternalLink } from 'lucide-react';
@@ -93,6 +94,13 @@ export default function DashboardPage() {
       });
 
       if (!skillsResponse.ok) {
+        const errorData = await skillsResponse.json();
+        
+        // Check if it's a document validation error
+        if (errorData.error === 'Invalid document type') {
+          throw new Error(errorData.message || 'Please upload a valid resume or CV');
+        }
+        
         throw new Error('Failed to extract skills');
       }
 
@@ -176,8 +184,8 @@ export default function DashboardPage() {
                 <div className="text-4xl mb-4 animate-pulse">🤖</div>
                 <div className="text-lg font-semibold mb-2">
                   {uploading && 'Uploading your resume...'}
-                  {parsing && 'Extracting skills with Gemini AI...'}
-                  {analyzing && 'Analyzing career paths and skill gaps...'}
+                  {parsing && 'Analyzing your resume...'}
+                  {analyzing && 'Generating career recommendations...'}
                 </div>
                 <div className="text-sm text-text-secondary">
                   {analyzing ? 'This may take 10-15 seconds' : 'Please wait...'}
@@ -237,7 +245,7 @@ export default function DashboardPage() {
                   disabled={!resumeFile && !resumeText}
                   className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  🤖 Analyze Resume & Get Career Insights →
+                  Analyze Resume & Get Career Insights →
                 </button>
               </>
             )}
@@ -391,6 +399,7 @@ export default function DashboardPage() {
                     <span className="flex items-center gap-1.5">
                       <span className="text-warning">⏱</span>
                       <span className="font-semibold text-text-primary">{career.timeline}</span>
+                      <span className="text-xs text-text-muted">to transition</span>
                     </span>
                   </div>
                 </div>
@@ -521,59 +530,7 @@ export default function DashboardPage() {
                   <h4 className="text-lg font-bold text-text-primary mb-4">Technical Skills</h4>
                   <div className="space-y-4">
                     {careerData.careerRecommendations[selectedRole].skillGaps.technical.map((skill: any, i: number) => (
-                      <div key={i} className="p-4 bg-bg-muted rounded-lg">
-                        <div className="flex items-center justify-between mb-3">
-                          <div>
-                            <h5 className="font-semibold text-text-primary">{skill.name}</h5>
-                            <p className="text-sm text-text-secondary mt-1">{skill.description}</p>
-                          </div>
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-bold ${
-                              skill.importance === 'High'
-                                ? 'bg-danger/10 text-danger'
-                                : 'bg-warning/10 text-warning'
-                            }`}
-                          >
-                            {skill.importance} Priority
-                          </span>
-                        </div>
-                        
-                        {/* Progress Bars */}
-                        <div className="space-y-3">
-                          <div>
-                            <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="text-text-secondary">Current Level</span>
-                              <span className="font-semibold text-text-primary">{skill.currentLevel}%</span>
-                            </div>
-                            <div className="h-2 bg-white rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-info rounded-full transition-all"
-                                style={{ width: `${skill.currentLevel}%` }}
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="text-text-secondary">Required Level</span>
-                              <span className="font-semibold text-brand">{skill.requiredLevel}%</span>
-                            </div>
-                            <div className="h-2 bg-white rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-brand rounded-full transition-all"
-                                style={{ width: `${skill.requiredLevel}%` }}
-                              />
-                            </div>
-                          </div>
-                          <div className="pt-2 border-t border-border">
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-text-secondary">Gap:</span>
-                              <span className="font-bold text-danger">
-                                {skill.requiredLevel - skill.currentLevel}% to improve
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <SkillLevelBadge key={i} skill={skill} index={i} />
                     ))}
                   </div>
                 </div>
@@ -585,59 +542,7 @@ export default function DashboardPage() {
                   <h4 className="text-lg font-bold text-text-primary mb-4">Soft Skills</h4>
                   <div className="space-y-4">
                     {careerData.careerRecommendations[selectedRole].skillGaps.soft.map((skill: any, i: number) => (
-                      <div key={i} className="p-4 bg-bg-muted rounded-lg">
-                        <div className="flex items-center justify-between mb-3">
-                          <div>
-                            <h5 className="font-semibold text-text-primary">{skill.name}</h5>
-                            <p className="text-sm text-text-secondary mt-1">{skill.description}</p>
-                          </div>
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-bold ${
-                              skill.importance === 'High'
-                                ? 'bg-danger/10 text-danger'
-                                : 'bg-warning/10 text-warning'
-                            }`}
-                          >
-                            {skill.importance} Priority
-                          </span>
-                        </div>
-                        
-                        {/* Progress Bars */}
-                        <div className="space-y-3">
-                          <div>
-                            <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="text-text-secondary">Current Level</span>
-                              <span className="font-semibold text-text-primary">{skill.currentLevel}%</span>
-                            </div>
-                            <div className="h-2 bg-white rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-info rounded-full transition-all"
-                                style={{ width: `${skill.currentLevel}%` }}
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="text-text-secondary">Required Level</span>
-                              <span className="font-semibold text-brand">{skill.requiredLevel}%</span>
-                            </div>
-                            <div className="h-2 bg-white rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-brand rounded-full transition-all"
-                                style={{ width: `${skill.requiredLevel}%` }}
-                              />
-                            </div>
-                          </div>
-                          <div className="pt-2 border-t border-border">
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-text-secondary">Gap:</span>
-                              <span className="font-bold text-danger">
-                                {skill.requiredLevel - skill.currentLevel}% to improve
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <SkillLevelBadge key={i} skill={skill} index={i} />
                     ))}
                   </div>
                 </div>

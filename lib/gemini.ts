@@ -62,8 +62,8 @@ Resume text:
 
 export async function parseResume(text: string) {
   try {
-    // Try gemini-pro first (more widely available)
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    // Try gemini-1.5-pro (stable, widely available)
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
     const result = await model.generateContent(RESUME_PARSE_PROMPT + text);
     const response = result.response.text();
     const cleaned = response.replace(/```json|```/g, '').trim();

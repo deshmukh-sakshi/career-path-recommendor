@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/components/layout/AppShell';
+import SkillLevelBadge from '@/components/dashboard/SkillLevelBadge';
 import { Target, BookOpen, ExternalLink, TrendingUp } from 'lucide-react';
 
 export default function SkillsPage() {
@@ -120,63 +121,7 @@ export default function SkillsPage() {
                     <h4 className="text-lg font-bold text-text-primary mb-4">Technical Skills</h4>
                     <div className="space-y-4">
                       {selectedCareer.skillGaps.technical.map((skill: any, i: number) => (
-                        <div key={i} className="p-4 bg-bg-muted rounded-lg">
-                          <div className="flex items-center justify-between mb-3">
-                            <div>
-                              <h5 className="font-semibold text-text-primary">{skill.name}</h5>
-                              <p className="text-sm text-text-secondary mt-1">{skill.description}</p>
-                            </div>
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                skill.importance === 'High'
-                                  ? 'bg-danger/10 text-danger'
-                                  : 'bg-warning/10 text-warning'
-                              }`}
-                            >
-                              {skill.importance} Priority
-                            </span>
-                          </div>
-                          
-                          {/* Progress Bars */}
-                          <div className="space-y-3">
-                            <div>
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="text-text-secondary">Current Level</span>
-                                <span className="font-semibold text-text-primary">{skill.currentLevel}%</span>
-                              </div>
-                              <div className="h-2 bg-white rounded-full overflow-hidden">
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${skill.currentLevel}%` }}
-                                  transition={{ duration: 0.8, delay: i * 0.1 }}
-                                  className="h-full bg-info rounded-full"
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="text-text-secondary">Required Level</span>
-                                <span className="font-semibold text-brand">{skill.requiredLevel}%</span>
-                              </div>
-                              <div className="h-2 bg-white rounded-full overflow-hidden">
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${skill.requiredLevel}%` }}
-                                  transition={{ duration: 0.8, delay: i * 0.1 + 0.2 }}
-                                  className="h-full bg-brand rounded-full"
-                                />
-                              </div>
-                            </div>
-                            <div className="pt-2 border-t border-border">
-                              <div className="flex items-center gap-2 text-sm">
-                                <span className="text-text-secondary">Gap:</span>
-                                <span className="font-bold text-danger">
-                                  {skill.requiredLevel - skill.currentLevel}% to improve
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                        <SkillLevelBadge key={i} skill={skill} index={i} />
                       ))}
                     </div>
                   </div>
@@ -188,63 +133,7 @@ export default function SkillsPage() {
                     <h4 className="text-lg font-bold text-text-primary mb-4">Soft Skills</h4>
                     <div className="space-y-4">
                       {selectedCareer.skillGaps.soft.map((skill: any, i: number) => (
-                        <div key={i} className="p-4 bg-bg-muted rounded-lg">
-                          <div className="flex items-center justify-between mb-3">
-                            <div>
-                              <h5 className="font-semibold text-text-primary">{skill.name}</h5>
-                              <p className="text-sm text-text-secondary mt-1">{skill.description}</p>
-                            </div>
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                skill.importance === 'High'
-                                  ? 'bg-danger/10 text-danger'
-                                  : 'bg-warning/10 text-warning'
-                              }`}
-                            >
-                              {skill.importance} Priority
-                            </span>
-                          </div>
-                          
-                          {/* Progress Bars */}
-                          <div className="space-y-3">
-                            <div>
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="text-text-secondary">Current Level</span>
-                                <span className="font-semibold text-text-primary">{skill.currentLevel}%</span>
-                              </div>
-                              <div className="h-2 bg-white rounded-full overflow-hidden">
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${skill.currentLevel}%` }}
-                                  transition={{ duration: 0.8 }}
-                                  className="h-full bg-info rounded-full"
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="text-text-secondary">Required Level</span>
-                                <span className="font-semibold text-brand">{skill.requiredLevel}%</span>
-                              </div>
-                              <div className="h-2 bg-white rounded-full overflow-hidden">
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${skill.requiredLevel}%` }}
-                                  transition={{ duration: 0.8, delay: 0.2 }}
-                                  className="h-full bg-brand rounded-full"
-                                />
-                              </div>
-                            </div>
-                            <div className="pt-2 border-t border-border">
-                              <div className="flex items-center gap-2 text-sm">
-                                <span className="text-text-secondary">Gap:</span>
-                                <span className="font-bold text-danger">
-                                  {skill.requiredLevel - skill.currentLevel}% to improve
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                        <SkillLevelBadge key={i} skill={skill} index={i} />
                       ))}
                     </div>
                   </div>

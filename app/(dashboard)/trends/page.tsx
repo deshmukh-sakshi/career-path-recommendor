@@ -35,40 +35,40 @@ const skillDemand = [
 const salaryIntelligence = [
   {
     role: 'AI/ML Engineer',
-    avgSalary: '$150K',
-    range: '$120K - $180K',
+    avgSalary: '₹12.5L',
+    range: '₹10L - ₹15L',
     yoyChange: '+12%',
     demand: 'Very High',
     isRecommended: true,
   },
   {
     role: 'Data Scientist',
-    avgSalary: '$135K',
-    range: '$110K - $160K',
+    avgSalary: '₹11.2L',
+    range: '₹9L - ₹13.3L',
     yoyChange: '+9%',
     demand: 'Very High',
     isRecommended: false,
   },
   {
     role: 'Cloud Architect',
-    avgSalary: '$160K',
-    range: '$130K - $190K',
+    avgSalary: '₹13.3L',
+    range: '₹10.8L - ₹15.8L',
     yoyChange: '+11%',
     demand: 'High',
     isRecommended: false,
   },
   {
     role: 'Product Manager',
-    avgSalary: '$142K',
-    range: '$115K - $170K',
+    avgSalary: '₹11.8L',
+    range: '₹9.5L - ₹14.1L',
     yoyChange: '+7%',
     demand: 'High',
     isRecommended: false,
   },
   {
     role: 'DevOps Engineer',
-    avgSalary: '$128K',
-    range: '$105K - $155K',
+    avgSalary: '₹10.6L',
+    range: '₹8.7L - ₹12.9L',
     yoyChange: '+10%',
     demand: 'High',
     isRecommended: false,
@@ -80,6 +80,92 @@ const wefForecast = [
   { label: '92M', description: 'Jobs displaced by automation' },
   { label: '22%', description: 'Jobs in transformation' },
   { label: '39%', description: 'Skills changing by 2027' },
+];
+
+const trendingTopics = [
+  {
+    icon: '🤖',
+    title: 'Generative AI Revolution',
+    description: 'ChatGPT, Midjourney, and LLMs are transforming how we work. Companies are racing to integrate AI into products.',
+    impact: 'High',
+    color: 'from-purple-500/10 to-pink-500/10',
+    borderColor: 'border-purple-500/20',
+  },
+  {
+    icon: '🔐',
+    title: 'Zero Trust Security',
+    description: 'With remote work, traditional perimeter security is dead. Zero trust architecture is the new standard.',
+    impact: 'High',
+    color: 'from-red-500/10 to-orange-500/10',
+    borderColor: 'border-red-500/20',
+  },
+  {
+    icon: '☁️',
+    title: 'Multi-Cloud Strategy',
+    description: 'Companies are moving beyond single cloud providers. AWS + Azure + GCP expertise is highly valued.',
+    impact: 'Medium',
+    color: 'from-blue-500/10 to-cyan-500/10',
+    borderColor: 'border-blue-500/20',
+  },
+  {
+    icon: '⚡',
+    title: 'Edge Computing',
+    description: 'Processing data closer to the source. IoT, 5G, and real-time applications are driving this trend.',
+    impact: 'Medium',
+    color: 'from-green-500/10 to-emerald-500/10',
+    borderColor: 'border-green-500/20',
+  },
+];
+
+const techJargon = [
+  {
+    term: 'Forward Deployed Engineer',
+    shortDesc: 'Engineers who work directly at client sites',
+    fullDesc: 'A software engineer who works on-site with clients to understand their problems deeply and build custom solutions. Think of it as being a technical consultant who codes. Popular at companies like Palantir.',
+    example: 'Working at a bank to build fraud detection systems',
+    salary: '₹15L - ₹25L',
+    companies: ['Palantir', 'Stripe', 'Scale AI'],
+  },
+  {
+    term: 'Site Reliability Engineer (SRE)',
+    shortDesc: 'DevOps + Software Engineering hybrid',
+    fullDesc: 'Combines software engineering and systems administration to build and run large-scale, distributed systems. Focus on automation, monitoring, and keeping services running 24/7.',
+    example: 'Ensuring Netflix stays online during peak hours',
+    salary: '₹12L - ₹20L',
+    companies: ['Google', 'Netflix', 'Amazon'],
+  },
+  {
+    term: 'Platform Engineer',
+    shortDesc: 'Builds tools for other developers',
+    fullDesc: 'Creates internal platforms, tools, and infrastructure that make other developers more productive. Think of it as building the foundation that others build on top of.',
+    example: 'Creating a deployment system used by 100+ engineers',
+    salary: '₹14L - ₹22L',
+    companies: ['Uber', 'Airbnb', 'Spotify'],
+  },
+  {
+    term: 'MLOps Engineer',
+    shortDesc: 'DevOps for Machine Learning',
+    fullDesc: 'Bridges the gap between data scientists and production systems. Deploys, monitors, and maintains ML models at scale. Combines ML knowledge with DevOps practices.',
+    example: 'Deploying recommendation models that serve millions',
+    salary: '₹13L - ₹21L',
+    companies: ['Meta', 'Google', 'Microsoft'],
+  },
+  {
+    term: 'Developer Advocate',
+    shortDesc: 'Technical evangelist and community builder',
+    fullDesc: 'A developer who represents a company to the developer community. Creates content, speaks at conferences, and helps developers succeed with the company\'s products.',
+    example: 'Creating tutorials and demos for a new API',
+    salary: '₹10L - ₹18L',
+    companies: ['Vercel', 'MongoDB', 'Twilio'],
+  },
+  {
+    term: 'Growth Engineer',
+    shortDesc: 'Engineering + Marketing + Data',
+    fullDesc: 'Uses engineering skills to drive user growth and engagement. Runs experiments, builds growth features, and analyzes data to optimize conversion funnels.',
+    example: 'A/B testing signup flows to increase conversions',
+    salary: '₹11L - ₹19L',
+    companies: ['Dropbox', 'Notion', 'Figma'],
+  },
 ];
 
 export default function TrendsPage() {
@@ -245,7 +331,112 @@ export default function TrendsPage() {
           </div>
         </motion.div>
 
-        {/* Row 4: WEF 2025 Forecast */}
+        {/* Row 4: Trending Topics */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="space-y-4"
+        >
+          <h2 className="text-2xl font-display">🔥 What's Trending in Tech</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {trendingTopics.map((topic, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6 + i * 0.1 }}
+                className={`card p-6 bg-gradient-to-br ${topic.color} border ${topic.borderColor} hover:shadow-lg transition-all`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="text-4xl">{topic.icon}</div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-lg font-bold text-text-primary">{topic.title}</h3>
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${
+                        topic.impact === 'High' 
+                          ? 'bg-danger/20 text-danger' 
+                          : 'bg-warning/20 text-warning'
+                      }`}>
+                        {topic.impact} Impact
+                      </span>
+                    </div>
+                    <p className="text-sm text-text-secondary leading-relaxed">
+                      {topic.description}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Row 5: Tech Jargon Explained */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="space-y-4"
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-display">💡 Tech Jargon Explained</h2>
+            <span className="text-sm text-text-secondary">Decode the buzzwords</span>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {techJargon.map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 + i * 0.05 }}
+                className="card p-6 hover:shadow-elevated transition-all group"
+              >
+                <div className="mb-4">
+                  <h3 className="text-lg font-bold text-text-primary mb-1 group-hover:text-brand transition-colors">
+                    {item.term}
+                  </h3>
+                  <p className="text-xs text-brand font-semibold mb-3">{item.shortDesc}</p>
+                  <p className="text-sm text-text-secondary leading-relaxed mb-4">
+                    {item.fullDesc}
+                  </p>
+                </div>
+
+                <div className="space-y-3 pt-4 border-t border-border">
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs font-semibold text-text-secondary mt-0.5">💼</span>
+                    <div className="flex-1">
+                      <div className="text-xs text-text-secondary mb-1">Example:</div>
+                      <div className="text-sm text-text-primary">{item.example}</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs text-text-secondary mb-1">Salary Range</div>
+                      <div className="text-sm font-bold text-success">{item.salary}</div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-text-secondary mb-2">Hiring Companies:</div>
+                    <div className="flex flex-wrap gap-1">
+                      {item.companies.map((company, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-1 bg-bg-muted text-text-primary text-xs rounded border border-border"
+                        >
+                          {company}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Row 6: WEF 2025 Forecast */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}

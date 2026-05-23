@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
-const apiKey = process.env.GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(apiKey || '');
+const apiKey = process.env.GROQ_API_KEY;
+const groq = new Groq({ apiKey: apiKey || '' });
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -16,14 +16,12 @@ export async function POST(request: NextRequest) {
   }
 
   if (!apiKey) {
-    console.warn('⚠️ Gemini API key not configured, using fallback content');
+    console.warn('⚠️ Groq API key not configured, using fallback content');
   }
 
-  // Try to use Gemini API if key is available
+  // Try to use Groq API if key is available
   if (apiKey) {
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
       const prompt = `You are an expert AI Career Strategist and Skills Analyst for the Indian job market. Based on the following user skills, provide a comprehensive career analysis.
 
 USER SKILLS: ${skills.join(', ')}
@@ -42,23 +40,25 @@ Return ONLY a valid JSON object (no markdown, no explanations) with this EXACT s
       "description": "Brief 2-sentence description of the role and why it's a good fit",
       "keyResponsibilities": ["Responsibility 1", "Responsibility 2", "Responsibility 3"],
       "requiredSkills": ["Skill 1", "Skill 2", "Skill 3"],
-      "timeline": "1-2 years",
+      "timeline": "0-6 months / 6-12 months / 1-2 years / 2-3 years",
       "skillGaps": {
         "technical": [
           {
             "name": "Skill Name",
-            "currentLevel": 0,
-            "requiredLevel": 80,
-            "importance": "High",
+            "currentLevel": "Beginner/Intermediate/Advanced/Expert",
+            "requiredLevel": "Beginner/Intermediate/Advanced/Expert",
+            "gap": "Low/Medium/High",
+            "importance": "High/Medium/Low",
             "description": "Why this skill is important for this role"
           }
         ],
         "soft": [
           {
             "name": "Soft Skill",
-            "currentLevel": 0,
-            "requiredLevel": 70,
-            "importance": "Medium",
+            "currentLevel": "Beginner/Intermediate/Advanced/Expert",
+            "requiredLevel": "Beginner/Intermediate/Advanced/Expert",
+            "gap": "Low/Medium/High",
+            "importance": "High/Medium/Low",
             "description": "Why this is important"
           }
         ]
@@ -91,29 +91,42 @@ Return ONLY a valid JSON object (no markdown, no explanations) with this EXACT s
 REQUIREMENTS:
 1. Provide 3-5 career recommendations ranked by match score (0-100)
 2. ALL SALARIES IN INR (₹) - Use realistic Indian market rates (e.g., ₹8L-₹15L for mid-level, ₹15L-₹30L for senior)
-3. For EACH career, include specific skillGaps with current vs required levels (0-100 scale)
+3. For EACH career, include specific skillGaps with skill levels as categories:
+   - currentLevel: "Beginner", "Intermediate", "Advanced", or "Expert"
+   - requiredLevel: "Beginner", "Intermediate", "Advanced", or "Expert"
+   - gap: "Low" (1 level difference), "Medium" (2 levels), or "High" (3+ levels)
 4. For EACH career, include a personalized learningPath with 3-4 steps
 5. Include 2-3 specific learning resources per step with real URLs
 6. Consider Indian job market trends and demand
-7. Be specific and practical - no generic advice`;
+7. Be specific and practical - no generic advice
+8. Use categorical skill levels, NOT numerical percentages
+9. Timeline should indicate estimated time to become job-ready for that role:
+   - "0-6 months" for roles matching current skills
+   - "6-12 months" for roles requiring minor upskilling
+   - "1-2 years" for roles requiring moderate skill development
+   - "2-3 years" for roles requiring significant learning`;
 
-      const result = await model.generateContent(prompt);
-      const response = result.response.text();
-      
-      // Clean up the response
-      const cleaned = response.replace(/```json|```/g, '').trim();
+      const response = await groq.chat.completions.create({
+        messages: [{ role: 'user', content: prompt }],
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.3,
+        max_tokens: 8000,
+      });
+
+      const responseText = response.choices[0]?.message?.content || '{}';
+      const cleaned = responseText.replace(/```json|```/g, '').trim();
       const parsed = JSON.parse(cleaned);
 
-      console.log('✅ Career analysis complete from Gemini API');
+      console.log('✅ Career analysis complete from Groq API');
 
       return NextResponse.json(parsed, { status: 200 });
-    } catch (geminiError: any) {
-      console.error('⚠️ Gemini API failed, using fallback content:', geminiError.message);
+    } catch (groqError: any) {
+      console.error('⚠️ Groq API failed, using fallback content:', groqError.message);
       // Continue to fallback content below
     }
   }
 
-  // Fallback response when Gemini API is not available or fails
+  // Fallback response when Groq API is not available or fails
   console.log('📋 Returning fallback career analysis content');
   return NextResponse.json(
     {
@@ -136,15 +149,17 @@ REQUIREMENTS:
               technical: [
                 {
                   name: 'Docker & Kubernetes',
-                  currentLevel: 20,
-                  requiredLevel: 75,
+                  currentLevel: 'Beginner',
+                  requiredLevel: 'Advanced',
+                  gap: 'High',
                   importance: 'High',
                   description: 'Container orchestration is essential for modern deployments'
                 },
                 {
                   name: 'System Design',
-                  currentLevel: 30,
-                  requiredLevel: 80,
+                  currentLevel: 'Intermediate',
+                  requiredLevel: 'Advanced',
+                  gap: 'Medium',
                   importance: 'High',
                   description: 'Understanding scalable architecture is crucial'
                 }
@@ -152,8 +167,9 @@ REQUIREMENTS:
               soft: [
                 {
                   name: 'Technical Leadership',
-                  currentLevel: 40,
-                  requiredLevel: 70,
+                  currentLevel: 'Intermediate',
+                  requiredLevel: 'Advanced',
+                  gap: 'Medium',
                   importance: 'Medium',
                   description: 'Leading projects and mentoring juniors'
                 }
@@ -231,15 +247,17 @@ REQUIREMENTS:
               technical: [
                 {
                   name: 'Advanced React Patterns',
-                  currentLevel: 50,
-                  requiredLevel: 85,
+                  currentLevel: 'Intermediate',
+                  requiredLevel: 'Expert',
+                  gap: 'Medium',
                   importance: 'High',
                   description: 'Hooks, Context, Performance optimization'
                 },
                 {
                   name: 'CSS Architecture',
-                  currentLevel: 40,
-                  requiredLevel: 75,
+                  currentLevel: 'Intermediate',
+                  requiredLevel: 'Advanced',
+                  gap: 'Medium',
                   importance: 'Medium',
                   description: 'Tailwind, CSS-in-JS, Design systems'
                 }
@@ -247,8 +265,9 @@ REQUIREMENTS:
               soft: [
                 {
                   name: 'Design Collaboration',
-                  currentLevel: 50,
-                  requiredLevel: 75,
+                  currentLevel: 'Intermediate',
+                  requiredLevel: 'Advanced',
+                  gap: 'Medium',
                   importance: 'Medium',
                   description: 'Working with designers and design tools'
                 }
@@ -301,15 +320,17 @@ REQUIREMENTS:
               technical: [
                 {
                   name: 'Database Optimization',
-                  currentLevel: 35,
-                  requiredLevel: 80,
+                  currentLevel: 'Beginner',
+                  requiredLevel: 'Advanced',
+                  gap: 'High',
                   importance: 'High',
                   description: 'Query optimization, indexing, scaling'
                 },
                 {
                   name: 'API Security',
-                  currentLevel: 40,
-                  requiredLevel: 85,
+                  currentLevel: 'Intermediate',
+                  requiredLevel: 'Expert',
+                  gap: 'High',
                   importance: 'High',
                   description: 'Authentication, authorization, encryption'
                 }

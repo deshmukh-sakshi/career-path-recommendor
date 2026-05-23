@@ -46,18 +46,11 @@ export default function Sidebar({ user }: SidebarProps) {
       }
     }
     
-    // Fallback: calculate based on profile completion
-    let strength = 0;
-    if (user?.name) strength += 20;
-    if (user?.email) strength += 20;
-    
-    const hasResume = localStorage.getItem('resumeUploaded') === 'true';
-    if (hasResume) strength += 40;
-    
-    return strength;
+    return null; // Return null if no analysis exists
   };
 
   const profileStrength = calculateProfileStrength();
+  const hasCareerAnalysis = profileStrength !== null;
 
   return (
     <div className="w-64 bg-bg-surface border-r border-border flex flex-col h-screen fixed left-0 top-0">
@@ -101,27 +94,29 @@ export default function Sidebar({ user }: SidebarProps) {
           </div>
         </div>
         
-        {/* Career Readiness */}
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-text-secondary font-medium">Career Readiness</span>
-            <span className="text-brand font-bold">{profileStrength}%</span>
+        {/* Career Readiness - Only show if analysis exists */}
+        {hasCareerAnalysis && (
+          <div className="space-y-2 mb-4">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-text-secondary font-medium">Career Readiness</span>
+              <span className="text-brand font-bold">{profileStrength}%</span>
+            </div>
+            <div className="h-2 bg-bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-brand to-brand-dim rounded-full transition-all duration-500"
+                style={{ width: `${profileStrength}%` }}
+              />
+            </div>
+            {profileStrength! < 100 && (
+              <p className="text-xs text-text-muted">
+                {profileStrength! < 40 ? 'Upload resume to get started' : 
+                 profileStrength! < 60 ? 'Keep learning to improve' : 
+                 profileStrength! < 80 ? 'You\'re making great progress' :
+                 'Almost career ready!'}
+              </p>
+            )}
           </div>
-          <div className="h-2 bg-bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-brand to-brand-dim rounded-full transition-all duration-500"
-              style={{ width: `${profileStrength}%` }}
-            />
-          </div>
-          {profileStrength < 100 && (
-            <p className="text-xs text-text-muted">
-              {profileStrength < 40 ? 'Upload resume to get started' : 
-               profileStrength < 60 ? 'Keep learning to improve' : 
-               profileStrength < 80 ? 'You\'re making great progress' :
-               'Almost career ready!'}
-            </p>
-          )}
-        </div>
+        )}
 
         {/* Sign Out Button */}
         <button
