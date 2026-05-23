@@ -1,26 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
+  /* Light Theme - Professional SaaS */
   /* Backgrounds */
-  --bg-base: #0a0e17;
-  --bg-surface: #0f1623;
-  --bg-elevated: #161e2e;
-  --bg-muted: #1c2535;
+  --bg-base: #f8f9fc;
+  --bg-surface: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-muted: #f1f3f9;
 
-  /* Brand — Electric teal */
-  --brand: #00d4aa;
-  --brand-dim: #00a884;
-  --brand-glow: rgba(0, 212, 170, 0.15);
-  --brand-subtle: rgba(0, 212, 170, 0.08);
+  /* Brand — Professional Indigo */
+  --brand: #4f46e5;
+  --brand-dim: #6366f1;
+  --brand-glow: rgba(79, 70, 229, 0.1);
+  --brand-subtle: rgba(79, 70, 229, 0.05);
 
   /* Text */
-  --text-primary: #f0f4f8;
-  --text-secondary: #8a99b0;
-  --text-muted: #4a5568;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
 
   /* Semantic */
   --success: #10b981;
@@ -29,17 +30,17 @@
   --info: #3b82f6;
 
   /* Borders */
-  --border: rgba(255, 255, 255, 0.07);
-  --border-hover: rgba(0, 212, 170, 0.3);
+  --border: #e2e8f0;
+  --border-hover: rgba(79, 70, 229, 0.3);
 
   /* Match score colors */
-  --match-high: #00d4aa;
+  --match-high: #10b981;
   --match-mid: #f59e0b;
   --match-low: #ef4444;
 
   /* Fonts */
-  --font-display: 'DM Serif Display', Georgia, serif;
-  --font-body: 'DM Sans', sans-serif;
+  --font-display: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
 }
 
 * {
@@ -67,49 +68,94 @@ body {
     background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: 12px;
-    backdrop-filter: blur(12px);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+  }
+
+  .card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
   }
 
   .btn-primary {
     background: var(--brand);
-    color: var(--bg-base);
+    color: #ffffff;
     font-weight: 600;
     padding: 0.75rem 1.5rem;
     border-radius: 8px;
     transition: all 0.15s ease;
+    border: none;
+    cursor: pointer;
   }
 
-  .btn-primary:hover {
+  .btn-primary:hover:not(:disabled) {
     background: var(--brand-dim);
-    box-shadow: 0 0 20px var(--brand-glow);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .btn-ghost {
     background: transparent;
-    color: var(--text-primary);
+    color: var(--text-secondary);
     border: 1px solid var(--border);
     padding: 0.75rem 1.5rem;
     border-radius: 8px;
     transition: all 0.15s ease;
+    cursor: pointer;
+    font-weight: 500;
   }
 
   .btn-ghost:hover {
     border-color: var(--brand);
     color: var(--brand);
+    background: var(--brand-subtle);
   }
 
   .input-dark {
-    background: var(--bg-muted);
+    background: var(--bg-surface);
     border: 1px solid var(--border);
     color: var(--text-primary);
     padding: 0.75rem 1rem;
     border-radius: 8px;
     transition: all 0.15s ease;
+    font-size: 0.875rem;
+  }
+
+  .input-dark::placeholder {
+    color: var(--text-muted);
   }
 
   .input-dark:focus {
     outline: none;
     border-color: var(--brand);
     box-shadow: 0 0 0 3px var(--brand-glow);
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    transition: all 0.15s ease;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+
+  .sidebar-item:hover {
+    background: var(--bg-muted);
+    color: var(--text-primary);
+  }
+
+  .sidebar-item.active {
+    background: var(--brand-subtle);
+    color: var(--brand);
+    font-weight: 600;
   }
 }

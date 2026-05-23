@@ -9,7 +9,7 @@ const mockCareers = [
   {
     id: '1',
     title: 'AI/ML Engineer',
-    salary: '$120K - $180K',
+    salary: '₹10L - ₹18L per annum',
     demand: 'Very High',
     matchScore: 92,
     skills: { have: ['Python', 'TensorFlow'], need: ['MLOps', 'LLM fine-tuning'] },
@@ -19,7 +19,7 @@ const mockCareers = [
   {
     id: '2',
     title: 'Data Scientist',
-    salary: '$110K - $160K',
+    salary: '₹9L - ₹16L per annum',
     demand: 'Very High',
     matchScore: 85,
     skills: { have: ['SQL', 'Statistics'], need: ['Spark'] },
@@ -28,7 +28,7 @@ const mockCareers = [
   {
     id: '3',
     title: 'Cloud Architect',
-    salary: '$130K - $190K',
+    salary: '₹12L - ₹20L per annum',
     demand: 'High',
     matchScore: 78,
     skills: { have: ['AWS', 'Docker'], need: ['Kubernetes', 'Terraform'] },
@@ -37,7 +37,7 @@ const mockCareers = [
   {
     id: '4',
     title: 'Product Manager',
-    salary: '$115K - $170K',
+    salary: '₹10L - ₹18L per annum',
     demand: 'High',
     matchScore: 71,
     skills: { have: ['Agile', 'Communication'], need: ['Product Strategy'] },
@@ -46,7 +46,7 @@ const mockCareers = [
   {
     id: '5',
     title: 'UX Designer',
-    salary: '$90K - $140K',
+    salary: '₹7L - ₹14L per annum',
     demand: 'Medium',
     matchScore: 68,
     skills: { have: ['Figma', 'User Research'], need: ['Prototyping'] },
@@ -55,7 +55,7 @@ const mockCareers = [
   {
     id: '6',
     title: 'Financial Analyst',
-    salary: '$80K - $130K',
+    salary: '₹6L - ₹12L per annum',
     demand: 'Medium',
     matchScore: 62,
     skills: { have: ['Excel', 'SQL'], need: ['Financial Modeling'] },

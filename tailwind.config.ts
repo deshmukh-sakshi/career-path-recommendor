@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: ["class"],
+  darkMode: 'class', // Keep this but we won't use the 'dark' class
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -10,22 +10,23 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Light Theme - Professional SaaS Design
         // Backgrounds
-        'bg-base': '#0a0e17',
-        'bg-surface': '#0f1623',
-        'bg-elevated': '#161e2e',
-        'bg-muted': '#1c2535',
+        'bg-base': '#f8f9fc',
+        'bg-surface': '#ffffff',
+        'bg-elevated': '#ffffff',
+        'bg-muted': '#f1f3f9',
         
-        // Brand - Electric teal
-        'brand': '#00d4aa',
-        'brand-dim': '#00a884',
-        'brand-glow': 'rgba(0, 212, 170, 0.15)',
-        'brand-subtle': 'rgba(0, 212, 170, 0.08)',
+        // Brand - Professional Blue
+        'brand': '#4f46e5',
+        'brand-dim': '#6366f1',
+        'brand-glow': 'rgba(79, 70, 229, 0.1)',
+        'brand-subtle': 'rgba(79, 70, 229, 0.05)',
         
         // Text
-        'text-primary': '#f0f4f8',
-        'text-secondary': '#8a99b0',
-        'text-muted': '#4a5568',
+        'text-primary': '#1e293b',
+        'text-secondary': '#64748b',
+        'text-muted': '#94a3b8',
         
         // Semantic
         'success': '#10b981',
@@ -34,17 +35,17 @@ const config: Config = {
         'info': '#3b82f6',
         
         // Borders
-        'border': 'rgba(255,255,255,0.07)',
-        'border-hover': 'rgba(0, 212, 170, 0.3)',
+        'border': '#e2e8f0',
+        'border-hover': 'rgba(79, 70, 229, 0.3)',
         
         // Match scores
-        'match-high': '#00d4aa',
+        'match-high': '#10b981',
         'match-mid': '#f59e0b',
         'match-low': '#ef4444',
       },
       fontFamily: {
-        display: ['DM Serif Display', 'Georgia', 'serif'],
-        body: ['DM Sans', 'sans-serif'],
+        display: ['Inter', 'system-ui', 'sans-serif'],
+        body: ['Inter', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         'standard': '8px',
@@ -67,6 +68,11 @@ const config: Config = {
       animation: {
         'fade-in': 'fade-in 0.5s ease-out',
         'slide-in-from-bottom': 'slide-in-from-bottom 0.5s ease-out',
+      },
+      boxShadow: {
+        'soft': '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+        'elevated': '0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03)',
       },
     },
   },

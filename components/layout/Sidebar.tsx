@@ -1,16 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { Home, Map, FileText, BarChart3, TrendingUp, MessageSquare, Settings, LogOut } from 'lucide-react';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
-  { name: 'Career Paths', href: '/careers', icon: '🗺' },
-  { name: 'My Resume', href: '/resume', icon: '📄' },
-  { name: 'Skill Gap', href: '/skills', icon: '📊' },
-  { name: 'Market Trends', href: '/trends', icon: '📈' },
-  { name: 'AI Assistant', href: '/assistant', icon: '💬' },
-  { name: 'Settings', href: '/settings', icon: '⚙️' },
+  { name: 'Dashboard', href: '/dashboard', icon: Home },
+  { name: 'Career Paths', href: '/careers', icon: Map },
+  { name: 'My Resume', href: '/resume', icon: FileText },
+  { name: 'Skill Gap', href: '/skills', icon: BarChart3 },
+  { name: 'Market Trends', href: '/trends', icon: TrendingUp },
+  { name: 'AI Assistant', href: '/assistant', icon: MessageSquare },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 interface SidebarProps {
@@ -19,13 +20,43 @@ interface SidebarProps {
 
 export default function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleSignOut = () => {
+    if (confirm('Are you sure you want to sign out?')) {
+      localStorage.removeItem('user');
+      localStorage.removeItem('careerAnalysis');
+      localStorage.removeItem('resumeUploaded');
+      router.push('/');
+    }
+  };
+
+  // Calculate profile strength based on available data
+  const calculateProfileStrength = () => {
+    let strength = 0;
+    if (user?.name) strength += 20;
+    if (user?.email) strength += 20;
+    
+    const hasResume = localStorage.getItem('resumeUploaded') === 'true';
+    if (hasResume) strength += 40;
+    
+    const hasAnalysis = localStorage.getItem('careerAnalysis');
+    if (hasAnalysis) strength += 20;
+    
+    return strength;
+  };
+
+  const profileStrength = calculateProfileStrength();
 
   return (
-    <div className="w-60 bg-bg-surface border-r border-border flex flex-col h-screen fixed left-0 top-0">
+    <div className="w-64 bg-bg-surface border-r border-border flex flex-col h-screen fixed left-0 top-0">
       {/* Logo */}
       <div className="p-6 border-b border-border">
-        <Link href="/" className="text-2xl font-display text-brand">
-          CareerAI
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-lg">C</span>
+          </div>
+          <span className="text-xl font-bold text-text-primary">CareerAI</span>
         </Link>
       </div>
 
@@ -33,18 +64,15 @@ export default function Sidebar({ user }: SidebarProps) {
       <nav className="flex-1 p-4 space-y-1">
         {navigation.map((item) => {
           const isActive = pathname === item.href;
+          const Icon = item.icon;
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                isActive
-                  ? 'bg-brand-subtle text-brand border-l-2 border-brand'
-                  : 'text-text-secondary hover:bg-bg-elevated hover:text-text-primary'
-              }`}
+              className={`sidebar-item ${isActive ? 'active' : ''}`}
             >
-              <span className="text-xl">{item.icon}</span>
-              <span className="text-sm font-medium">{item.name}</span>
+              <Icon className="w-5 h-5" />
+              <span>{item.name}</span>
             </Link>
           );
         })}
@@ -52,29 +80,45 @@ export default function Sidebar({ user }: SidebarProps) {
 
       {/* User Profile */}
       <div className="p-4 border-t border-border">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand to-brand-dim flex items-center justify-center text-bg-base font-semibold">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand to-brand-dim flex items-center justify-center text-white font-semibold">
             {user?.name?.charAt(0) || 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate">{user?.name}</div>
-            <div className="text-xs text-text-secondary">Pro</div>
+            <div className="text-sm font-semibold text-text-primary truncate">{user?.name}</div>
+            <div className="text-xs text-text-muted">Free Plan</div>
           </div>
         </div>
         
-        {/* Profile Progress */}
-        <div className="space-y-2">
+        {/* Profile Strength */}
+        <div className="space-y-2 mb-4">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-text-secondary">Profile</span>
-            <span className="text-brand font-semibold">{user?.profileScore || 0}% complete</span>
+            <span className="text-text-secondary font-medium">Profile Strength</span>
+            <span className="text-brand font-bold">{profileStrength}%</span>
           </div>
-          <div className="h-1.5 bg-bg-muted rounded-full overflow-hidden">
+          <div className="h-2 bg-bg-muted rounded-full overflow-hidden">
             <div
-              className="h-full bg-brand rounded-full transition-all"
-              style={{ width: `${user?.profileScore || 0}%` }}
+              className="h-full bg-gradient-to-r from-brand to-brand-dim rounded-full transition-all duration-500"
+              style={{ width: `${profileStrength}%` }}
             />
           </div>
+          {profileStrength < 100 && (
+            <p className="text-xs text-text-muted">
+              {profileStrength < 40 ? 'Upload resume to boost' : 
+               profileStrength < 80 ? 'Complete analysis to improve' : 
+               'Almost there!'}
+            </p>
+          )}
         </div>
+
+        {/* Sign Out Button */}
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg text-danger hover:bg-danger/10 transition-all text-sm font-medium"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Sign Out</span>
+        </button>
       </div>
     </div>
   );
