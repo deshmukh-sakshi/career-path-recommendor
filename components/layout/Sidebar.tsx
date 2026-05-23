@@ -31,17 +31,28 @@ export default function Sidebar({ user }: SidebarProps) {
     }
   };
 
-  // Calculate profile strength based on available data
+  // Calculate profile strength based on career analysis
   const calculateProfileStrength = () => {
+    // Try to get career readiness from analysis
+    const analysisData = localStorage.getItem('careerAnalysis');
+    if (analysisData) {
+      try {
+        const parsed = JSON.parse(analysisData);
+        if (parsed?.overallAnalysis?.careerReadiness) {
+          return parsed.overallAnalysis.careerReadiness;
+        }
+      } catch (e) {
+        console.error('Error parsing career analysis:', e);
+      }
+    }
+    
+    // Fallback: calculate based on profile completion
     let strength = 0;
     if (user?.name) strength += 20;
     if (user?.email) strength += 20;
     
     const hasResume = localStorage.getItem('resumeUploaded') === 'true';
     if (hasResume) strength += 40;
-    
-    const hasAnalysis = localStorage.getItem('careerAnalysis');
-    if (hasAnalysis) strength += 20;
     
     return strength;
   };
@@ -90,10 +101,10 @@ export default function Sidebar({ user }: SidebarProps) {
           </div>
         </div>
         
-        {/* Profile Strength */}
+        {/* Career Readiness */}
         <div className="space-y-2 mb-4">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-text-secondary font-medium">Profile Strength</span>
+            <span className="text-text-secondary font-medium">Career Readiness</span>
             <span className="text-brand font-bold">{profileStrength}%</span>
           </div>
           <div className="h-2 bg-bg-muted rounded-full overflow-hidden">
@@ -104,9 +115,10 @@ export default function Sidebar({ user }: SidebarProps) {
           </div>
           {profileStrength < 100 && (
             <p className="text-xs text-text-muted">
-              {profileStrength < 40 ? 'Upload resume to boost' : 
-               profileStrength < 80 ? 'Complete analysis to improve' : 
-               'Almost there!'}
+              {profileStrength < 40 ? 'Upload resume to get started' : 
+               profileStrength < 60 ? 'Keep learning to improve' : 
+               profileStrength < 80 ? 'You\'re making great progress' :
+               'Almost career ready!'}
             </p>
           )}
         </div>

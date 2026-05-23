@@ -1,313 +1,412 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import AppShell from '@/components/layout/AppShell';
-
-const mockCareers = [
-  { id: '1', title: 'AI/ML Engineer' },
-  { id: '2', title: 'Data Scientist' },
-  { id: '3', title: 'Cloud Architect' },
-];
-
-const mockSkillGaps = [
-  { name: 'MLOps', userLevel: 40, requiredLevel: 75, gap: -35, priority: 'CRITICAL' },
-  { name: 'LLM Fine-tuning', userLevel: 30, requiredLevel: 70, gap: -40, priority: 'CRITICAL' },
-  { name: 'Cloud (AWS/GCP)', userLevel: 60, requiredLevel: 80, gap: -20, priority: 'RECOMMENDED' },
-  { name: 'TensorFlow/PyTorch', userLevel: 70, requiredLevel: 85, gap: -15, priority: 'RECOMMENDED' },
-  { name: 'Python', userLevel: 85, requiredLevel: 90, gap: -5, priority: 'OPTIONAL' },
-  { name: 'SQL', userLevel: 75, requiredLevel: 70, gap: 5, priority: 'OPTIONAL' },
-];
-
-const mockLearningPath = [
-  {
-    priority: 'CRITICAL',
-    title: 'MLOps Specialization',
-    provider: 'Coursera',
-    duration: '3 months',
-    cost: '$49/mo',
-    impact: '+23%',
-    link: '#',
-  },
-  {
-    priority: 'CRITICAL',
-    title: 'LLM Bootcamp',
-    provider: 'Full Stack Deep Learning',
-    duration: '6 weeks',
-    cost: 'Free',
-    impact: '+18%',
-    link: '#',
-  },
-  {
-    priority: 'RECOMMENDED',
-    title: 'Advanced PyTorch',
-    provider: 'Udacity',
-    duration: '2 months',
-    cost: '$399',
-    impact: '+12%',
-    link: '#',
-  },
-  {
-    priority: 'RECOMMENDED',
-    title: 'AWS ML Specialty',
-    provider: 'AWS Training',
-    duration: '4 weeks',
-    cost: '$300',
-    impact: '+8%',
-    link: '#',
-  },
-  {
-    priority: 'OPTIONAL',
-    title: 'Python Advanced Patterns',
-    provider: 'Real Python',
-    duration: '2 weeks',
-    cost: '$60',
-    impact: '+3%',
-    link: '#',
-  },
-];
+import { Target, BookOpen, ExternalLink, TrendingUp } from 'lucide-react';
 
 export default function SkillsPage() {
-  const [selectedCareer, setSelectedCareer] = useState(mockCareers[0].id);
+  const router = useRouter();
+  const [careerData, setCareerData] = useState<any>(null);
+  const [selectedRole, setSelectedRole] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
 
-  const overallReadiness = Math.round(
-    mockSkillGaps.reduce((acc, skill) => acc + skill.userLevel, 0) / mockSkillGaps.length
-  );
+  useEffect(() => {
+    // Check if user is logged in
+    const userData = localStorage.getItem('user');
+    if (!userData) {
+      router.push('/login');
+      return;
+    }
 
-  const totalCost = mockLearningPath
-    .filter((course) => course.priority !== 'OPTIONAL')
-    .reduce((acc, course) => {
-      const cost = course.cost.toLowerCase();
-      if (cost === 'free') return acc;
-      const match = cost.match(/\$(\d+)/);
-      return acc + (match ? parseInt(match[1]) : 0);
-    }, 0);
+    // Load career analysis data
+    const savedAnalysis = localStorage.getItem('careerAnalysis');
+    if (savedAnalysis) {
+      setCareerData(JSON.parse(savedAnalysis));
+    }
+    setLoading(false);
+  }, [router]);
 
-  const totalMonths = mockLearningPath
-    .filter((course) => course.priority !== 'OPTIONAL')
-    .reduce((acc, course) => {
-      const match = course.duration.match(/(\d+)\s*(month|week)/);
-      if (!match) return acc;
-      const value = parseInt(match[1]);
-      const unit = match[2];
-      return acc + (unit === 'month' ? value : value / 4);
-    }, 0);
+  if (loading) {
+    return (
+      <AppShell title="Skill Gap Analysis" subtitle="Loading your skill analysis...">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-text-secondary">Loading...</div>
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (!careerData || !careerData.careerRecommendations) {
+    return (
+      <AppShell title="Skill Gap Analysis" subtitle="Upload your resume to see skill gaps">
+        <div className="card p-12 text-center">
+          <div className="text-6xl mb-4">📊</div>
+          <h2 className="text-2xl font-bold text-text-primary mb-3">
+            No Skill Analysis Available
+          </h2>
+          <p className="text-text-secondary mb-6">
+            Upload your resume to get personalized skill gap analysis and learning recommendations
+          </p>
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="btn-primary"
+          >
+            Upload Resume →
+          </button>
+        </div>
+      </AppShell>
+    );
+  }
+
+  const selectedCareer = careerData.careerRecommendations[selectedRole];
 
   return (
-    <AppShell title="Skill Gap Analysis" subtitle="Identify and close skill gaps for your target career">
+    <AppShell 
+      title="Skill Gap Analysis" 
+      subtitle="Identify and close skill gaps for your target career"
+    >
       <div className="space-y-6">
-        {/* Career Selector */}
+        {/* Role Selector */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="card p-6"
         >
-          <label className="block text-sm text-text-secondary mb-2">Analyzing gap for:</label>
-          <select
-            value={selectedCareer}
-            onChange={(e) => setSelectedCareer(e.target.value)}
-            className="input-dark text-lg font-semibold"
-          >
-            {mockCareers.map((career) => (
-              <option key={career.id} value={career.id}>
-                {career.title}
-              </option>
+          <h3 className="text-lg font-bold text-text-primary mb-4">Select a Career Role</h3>
+          <div className="grid md:grid-cols-3 gap-4">
+            {careerData.careerRecommendations.map((career: any, index: number) => (
+              <button
+                key={index}
+                onClick={() => setSelectedRole(index)}
+                className={`p-4 rounded-xl text-left transition-all ${
+                  selectedRole === index
+                    ? 'bg-brand text-white shadow-lg'
+                    : 'bg-bg-muted text-text-primary hover:bg-border'
+                }`}
+              >
+                <div className="font-bold mb-1">{career.title}</div>
+                <div className={`text-sm ${selectedRole === index ? 'text-white/80' : 'text-text-secondary'}`}>
+                  {career.matchScore}% Match • {career.salaryRange}
+                </div>
+              </button>
             ))}
-          </select>
+          </div>
         </motion.div>
 
         {/* Two Column Layout */}
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Left Column: Skill Proficiency */}
           <div className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, x: -16 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-              className="card p-6"
-            >
-              <h2 className="text-2xl font-display mb-6">Skill Proficiency vs Required</h2>
-              <div className="space-y-6">
-                {mockSkillGaps.map((skill, i) => {
-                  const getBarColor = (gap: number) => {
-                    if (gap >= 0) return 'bg-brand';
-                    if (gap >= -15) return 'bg-warning';
-                    return 'bg-danger';
-                  };
+            {/* Skill Proficiency Card */}
+            {selectedCareer?.skillGaps && (
+              <motion.div
+                key={`skills-${selectedRole}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="card p-8"
+              >
+                <h3 className="text-2xl font-bold text-text-primary mb-6 flex items-center gap-3">
+                  <span className="w-10 h-10 bg-brand/10 rounded-lg flex items-center justify-center">
+                    <Target className="w-6 h-6 text-brand" />
+                  </span>
+                  Skill Proficiency for {selectedCareer.title}
+                </h3>
 
-                  return (
-                    <div key={i}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium">{skill.name}</span>
-                        <div className="flex items-center gap-3 text-sm">
-                          <span className="text-text-secondary">Your: {skill.userLevel}%</span>
-                          <span className="text-text-secondary">
-                            Required: {skill.requiredLevel}%
-                          </span>
-                          <span
-                            className={`font-semibold ${
-                              skill.gap >= 0 ? 'text-success' : 'text-danger'
-                            }`}
-                          >
-                            {skill.gap >= 0 ? '+' : ''}
-                            {skill.gap}%
-                          </span>
+                {/* Technical Skills */}
+                {selectedCareer.skillGaps.technical?.length > 0 && (
+                  <div className="mb-8">
+                    <h4 className="text-lg font-bold text-text-primary mb-4">Technical Skills</h4>
+                    <div className="space-y-4">
+                      {selectedCareer.skillGaps.technical.map((skill: any, i: number) => (
+                        <div key={i} className="p-4 bg-bg-muted rounded-lg">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <h5 className="font-semibold text-text-primary">{skill.name}</h5>
+                              <p className="text-sm text-text-secondary mt-1">{skill.description}</p>
+                            </div>
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                skill.importance === 'High'
+                                  ? 'bg-danger/10 text-danger'
+                                  : 'bg-warning/10 text-warning'
+                              }`}
+                            >
+                              {skill.importance} Priority
+                            </span>
+                          </div>
+                          
+                          {/* Progress Bars */}
+                          <div className="space-y-3">
+                            <div>
+                              <div className="flex items-center justify-between text-xs mb-1">
+                                <span className="text-text-secondary">Current Level</span>
+                                <span className="font-semibold text-text-primary">{skill.currentLevel}%</span>
+                              </div>
+                              <div className="h-2 bg-white rounded-full overflow-hidden">
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${skill.currentLevel}%` }}
+                                  transition={{ duration: 0.8, delay: i * 0.1 }}
+                                  className="h-full bg-info rounded-full"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between text-xs mb-1">
+                                <span className="text-text-secondary">Required Level</span>
+                                <span className="font-semibold text-brand">{skill.requiredLevel}%</span>
+                              </div>
+                              <div className="h-2 bg-white rounded-full overflow-hidden">
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${skill.requiredLevel}%` }}
+                                  transition={{ duration: 0.8, delay: i * 0.1 + 0.2 }}
+                                  className="h-full bg-brand rounded-full"
+                                />
+                              </div>
+                            </div>
+                            <div className="pt-2 border-t border-border">
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="text-text-secondary">Gap:</span>
+                                <span className="font-bold text-danger">
+                                  {skill.requiredLevel - skill.currentLevel}% to improve
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="relative h-10 bg-bg-muted rounded-lg overflow-hidden">
-                        {/* User Level Bar */}
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${skill.userLevel}%` }}
-                          transition={{ duration: 0.8, delay: i * 0.1 }}
-                          className={`absolute h-full ${getBarColor(skill.gap)}`}
-                        />
-                        {/* Required Level Marker */}
-                        <div
-                          className="absolute h-full border-r-2 border-dashed border-white z-10"
-                          style={{ left: `${skill.requiredLevel}%` }}
-                        >
-                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full" />
-                          <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-white rounded-full" />
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  );
-                })}
-              </div>
-            </motion.div>
+                  </div>
+                )}
 
-            {/* Overall Readiness Arc */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="card p-6"
-            >
-              <h3 className="text-xl font-semibold mb-6 text-center">Overall Readiness</h3>
-              <div className="flex justify-center">
-                <div className="relative w-48 h-48">
-                  <svg className="w-full h-full transform -rotate-90">
-                    <circle
-                      cx="96"
-                      cy="96"
-                      r="80"
-                      fill="none"
-                      stroke="var(--bg-muted)"
-                      strokeWidth="12"
-                    />
-                    <motion.circle
-                      cx="96"
-                      cy="96"
-                      r="80"
-                      fill="none"
-                      stroke={
-                        overallReadiness >= 80
-                          ? 'var(--brand)'
-                          : overallReadiness >= 60
-                          ? 'var(--warning)'
-                          : 'var(--danger)'
-                      }
-                      strokeWidth="12"
-                      strokeLinecap="round"
-                      strokeDasharray={`${2 * Math.PI * 80}`}
-                      initial={{ strokeDashoffset: 2 * Math.PI * 80 }}
-                      animate={{
-                        strokeDashoffset: 2 * Math.PI * 80 * (1 - overallReadiness / 100),
-                      }}
-                      transition={{ duration: 1.2, ease: 'easeOut' }}
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <div className="text-5xl font-bold text-brand">{overallReadiness}%</div>
-                    <div className="text-sm text-text-secondary mt-2">Ready</div>
+                {/* Soft Skills */}
+                {selectedCareer.skillGaps.soft?.length > 0 && (
+                  <div>
+                    <h4 className="text-lg font-bold text-text-primary mb-4">Soft Skills</h4>
+                    <div className="space-y-4">
+                      {selectedCareer.skillGaps.soft.map((skill: any, i: number) => (
+                        <div key={i} className="p-4 bg-bg-muted rounded-lg">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <h5 className="font-semibold text-text-primary">{skill.name}</h5>
+                              <p className="text-sm text-text-secondary mt-1">{skill.description}</p>
+                            </div>
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                skill.importance === 'High'
+                                  ? 'bg-danger/10 text-danger'
+                                  : 'bg-warning/10 text-warning'
+                              }`}
+                            >
+                              {skill.importance} Priority
+                            </span>
+                          </div>
+                          
+                          {/* Progress Bars */}
+                          <div className="space-y-3">
+                            <div>
+                              <div className="flex items-center justify-between text-xs mb-1">
+                                <span className="text-text-secondary">Current Level</span>
+                                <span className="font-semibold text-text-primary">{skill.currentLevel}%</span>
+                              </div>
+                              <div className="h-2 bg-white rounded-full overflow-hidden">
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${skill.currentLevel}%` }}
+                                  transition={{ duration: 0.8 }}
+                                  className="h-full bg-info rounded-full"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex items-center justify-between text-xs mb-1">
+                                <span className="text-text-secondary">Required Level</span>
+                                <span className="font-semibold text-brand">{skill.requiredLevel}%</span>
+                              </div>
+                              <div className="h-2 bg-white rounded-full overflow-hidden">
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${skill.requiredLevel}%` }}
+                                  transition={{ duration: 0.8, delay: 0.2 }}
+                                  className="h-full bg-brand rounded-full"
+                                />
+                              </div>
+                            </div>
+                            <div className="pt-2 border-t border-border">
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="text-text-secondary">Gap:</span>
+                                <span className="font-bold text-danger">
+                                  {skill.requiredLevel - skill.currentLevel}% to improve
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* Overall Readiness */}
+            {careerData?.overallAnalysis && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="card p-8"
+              >
+                <h3 className="text-xl font-bold text-text-primary mb-6 text-center flex items-center justify-center gap-2">
+                  <TrendingUp className="w-6 h-6 text-brand" />
+                  Overall Career Readiness
+                </h3>
+                <div className="flex justify-center mb-6">
+                  <div className="relative w-48 h-48">
+                    <svg className="w-full h-full transform -rotate-90">
+                      <circle
+                        cx="96"
+                        cy="96"
+                        r="80"
+                        fill="none"
+                        stroke="#e2e8f0"
+                        strokeWidth="12"
+                      />
+                      <motion.circle
+                        cx="96"
+                        cy="96"
+                        r="80"
+                        fill="none"
+                        stroke="#4f46e5"
+                        strokeWidth="12"
+                        strokeLinecap="round"
+                        strokeDasharray={`${2 * Math.PI * 80}`}
+                        initial={{ strokeDashoffset: 2 * Math.PI * 80 }}
+                        animate={{
+                          strokeDashoffset: 2 * Math.PI * 80 * (1 - careerData.overallAnalysis.careerReadiness / 100),
+                        }}
+                        transition={{ duration: 1.2, ease: 'easeOut' }}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <div className="text-5xl font-bold text-brand">
+                        {careerData.overallAnalysis.careerReadiness}%
+                      </div>
+                      <div className="text-sm text-text-secondary mt-2">Ready</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
+                <div className="text-center">
+                  <div className="text-sm text-text-secondary mb-2">Market Demand</div>
+                  <div className="text-2xl font-bold text-success">
+                    {careerData.overallAnalysis.marketDemand}
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </div>
 
           {/* Right Column: Learning Path */}
           <div className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, x: 16 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-              className="card p-6"
-            >
-              <h2 className="text-2xl font-display mb-6">Recommended Learning Path</h2>
-              <div className="space-y-4">
-                {mockLearningPath.map((course, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 + i * 0.08 }}
-                    className={`p-4 rounded-lg border-2 ${
-                      course.priority === 'CRITICAL'
-                        ? 'border-danger bg-danger/5'
-                        : course.priority === 'RECOMMENDED'
-                        ? 'border-warning bg-warning/5'
-                        : 'border-brand bg-brand/5'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3 mb-3">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${
-                          course.priority === 'CRITICAL'
-                            ? 'bg-danger text-white'
-                            : course.priority === 'RECOMMENDED'
-                            ? 'bg-warning text-white'
-                            : 'bg-brand text-bg-base'
-                        }`}
-                      >
-                        {course.priority}
-                      </span>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg mb-1">{course.title}</h3>
-                        <div className="text-sm text-text-secondary">{course.provider}</div>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-3 text-sm text-text-secondary mb-3">
-                      <span>⏱️ {course.duration}</span>
-                      <span>💰 {course.cost}</span>
-                      <span className="text-brand font-semibold">
-                        Match impact: {course.impact}
-                      </span>
-                    </div>
-                    <button className="btn-primary w-full">Start learning →</button>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
+            {/* Learning Path */}
+            {selectedCareer?.learningPath && (
+              <motion.div
+                key={`learning-${selectedRole}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="card p-8"
+              >
+                <h3 className="text-2xl font-bold text-text-primary mb-6 flex items-center gap-3">
+                  <span className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-6 h-6 text-success" />
+                  </span>
+                  Recommended Learning Path
+                </h3>
 
-            {/* Total Investment */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="card p-6"
-            >
-              <h3 className="text-xl font-semibold mb-4">Total Investment Required</h3>
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <div className="text-4xl font-bold text-brand mb-2">~${totalCost}</div>
-                  <div className="text-sm text-text-secondary">Total cost (critical + recommended)</div>
-                </div>
-                <div>
-                  <div className="text-4xl font-bold text-brand mb-2">
-                    {Math.round(totalMonths)}mo
+                <div className="relative">
+                  {/* Timeline Line */}
+                  <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border" />
+
+                  <div className="space-y-8">
+                    {selectedCareer.learningPath.map((step: any, index: number) => (
+                      <div key={index} className="relative pl-16">
+                        {/* Step Number */}
+                        <div className="absolute left-0 w-12 h-12 bg-brand text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg">
+                          {step.step}
+                        </div>
+
+                        <div className="bg-bg-muted rounded-xl p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <h4 className="text-lg font-bold text-text-primary">{step.title}</h4>
+                              <p className="text-sm text-text-secondary mt-1">
+                                ⏱ Estimated Duration: {step.duration}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            {step.resources.map((resource: any, resIndex: number) => (
+                              <div
+                                key={resIndex}
+                                className="flex items-center justify-between p-4 bg-white rounded-lg hover:shadow-md transition-all"
+                              >
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="font-semibold text-text-primary">{resource.title}</span>
+                                    <span className="text-xs px-2 py-0.5 bg-brand/10 text-brand rounded font-medium">
+                                      {resource.type}
+                                    </span>
+                                  </div>
+                                  <div className="text-xs text-text-secondary">
+                                    ⏱ {resource.duration}
+                                  </div>
+                                </div>
+                                <a
+                                  href={resource.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-dim transition-all flex items-center gap-2 text-sm font-medium"
+                                >
+                                  Start Learning
+                                  <ExternalLink className="w-4 h-4" />
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="text-sm text-text-secondary">Time commitment</div>
                 </div>
-              </div>
-              <div className="mt-6 p-4 bg-brand/10 border border-brand/30 rounded-lg">
-                <div className="text-sm text-text-secondary mb-1">Expected outcome</div>
-                <div className="text-lg font-semibold text-brand">
-                  Match score increase: +61% → 92%
+              </motion.div>
+            )}
+
+            {/* Next Steps */}
+            {careerData?.overallAnalysis?.nextSteps && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="card p-8 bg-gradient-to-br from-brand/5 to-brand/10 border-brand/20"
+              >
+                <h3 className="text-2xl font-bold text-text-primary mb-6">🎯 Your Next Steps</h3>
+                <div className="space-y-4">
+                  {careerData.overallAnalysis.nextSteps.map((step: string, i: number) => (
+                    <div key={i} className="flex items-start gap-4 p-4 bg-white rounded-lg">
+                      <div className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                        {i + 1}
+                      </div>
+                      <p className="text-text-primary font-medium">{step}</p>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            )}
           </div>
         </div>
       </div>

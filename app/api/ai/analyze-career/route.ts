@@ -5,27 +5,26 @@ const apiKey = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey || '');
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { skills } = body;
+  const body = await request.json();
+  const { skills } = body;
 
-    if (!skills || !Array.isArray(skills) || skills.length === 0) {
-      return NextResponse.json(
-        { error: 'Skills array is required' },
-        { status: 400 }
-      );
-    }
+  if (!skills || !Array.isArray(skills) || skills.length === 0) {
+    return NextResponse.json(
+      { error: 'Skills array is required' },
+      { status: 400 }
+    );
+  }
 
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'Gemini API key not configured' },
-        { status: 500 }
-      );
-    }
+  if (!apiKey) {
+    console.warn('⚠️ Gemini API key not configured, using fallback content');
+  }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+  // Try to use Gemini API if key is available
+  if (apiKey) {
+    try {
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-    const prompt = `You are an expert AI Career Strategist and Skills Analyst for the Indian job market. Based on the following user skills, provide a comprehensive career analysis.
+      const prompt = `You are an expert AI Career Strategist and Skills Analyst for the Indian job market. Based on the following user skills, provide a comprehensive career analysis.
 
 USER SKILLS: ${skills.join(', ')}
 
@@ -98,23 +97,27 @@ REQUIREMENTS:
 6. Consider Indian job market trends and demand
 7. Be specific and practical - no generic advice`;
 
-    const result = await model.generateContent(prompt);
-    const response = result.response.text();
-    
-    // Clean up the response
-    const cleaned = response.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(cleaned);
+      const result = await model.generateContent(prompt);
+      const response = result.response.text();
+      
+      // Clean up the response
+      const cleaned = response.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
 
-    console.log('✅ Career analysis complete:', parsed);
+      console.log('✅ Career analysis complete from Gemini API');
 
-    return NextResponse.json(parsed, { status: 200 });
-  } catch (error: any) {
-    console.error('❌ Career analysis error:', error);
-    
-    // Fallback response for demo purposes
-    return NextResponse.json(
-      {
-        careerRecommendations: [
+      return NextResponse.json(parsed, { status: 200 });
+    } catch (geminiError: any) {
+      console.error('⚠️ Gemini API failed, using fallback content:', geminiError.message);
+      // Continue to fallback content below
+    }
+  }
+
+  // Fallback response when Gemini API is not available or fails
+  console.log('📋 Returning fallback career analysis content');
+  return NextResponse.json(
+    {
+      careerRecommendations: [
           {
             title: 'Full Stack Developer',
             matchScore: 88,
@@ -361,5 +364,4 @@ REQUIREMENTS:
       },
       { status: 200 }
     );
-  }
 }
